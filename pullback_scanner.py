@@ -41,6 +41,37 @@ def load(ticker, interval="1d", period="2y"):
     return df[["Open", "High", "Low", "Close", "Volume"]].dropna()
 
 
+def event_days(index):
+    """ימי ווליום מכני: יום שישי השלישי של מרץ/יוני/ספטמבר/דצמבר (פקיעת אופציות ואיזון מדדים)
+    ויום שישי האחרון של יוני (איזון Russell). חג -> יום המסחר שלפניו. מחזיר מערך bool לפי index."""
+    idx = pd.DatetimeIndex(index)
+    days = []
+    for y in range(idx.year.min(), idx.year.max() + 1):
+        for m in (3, 6, 9, 12):
+            fridays = pd.date_range(f"{y}-{m:02d}-01", periods=31, freq="D")
+            fridays = fridays[(fridays.month == m) & (fridays.weekday == 4)]
+            days.append(fridays[2])
+            if m == 6:
+                days.append(fridays[-1])
+    # רק תאריכים בתוך טווח הנתונים: תאריך עתידי לא יסמן את היום האחרון (בלי הצצה לעתיד)
+    days = pd.DatetimeIndex([d for d in days if idx[0] <= d <= idx[-1]])
+    pos = idx.searchsorted(days, side="right") - 1        # חג -> יום המסחר האחרון שלפניו
+    mask = np.zeros(len(idx), bool)
+    mask[pos] = True
+    return mask
+
+
+def clean_event_volume(df):
+    """בימי ווליום מכני - הווליום נחתך לחציון 20 הימים שלפניו (רק נתוני עבר), כדי שקפיצה של קרנות
+    מדדים לא תיחשב "פריצה בווליום" ולא תנפח את הווליום השבועי."""
+    ev = event_days(df.index)
+    if not ev.any():
+        return df
+    med = df["Volume"].rolling(20, min_periods=5).median().shift(1)
+    vol = df["Volume"].where(~ev, np.minimum(df["Volume"], med.fillna(df["Volume"])))
+    return df.assign(Volume=vol)
+
+
 def to_weekly(df):
     return df.resample("W-FRI").agg({"Open": "first", "High": "max", "Low": "min",
                                      "Close": "last", "Volume": "sum"}).dropna()
@@ -202,7 +233,7 @@ def demo_data(seed=7):
 
 
 def scan(ticker, df=None):
-    df = load(ticker) if df is None else df
+    df = clean_event_volume(load(ticker) if df is None else df)
     rd = detect(df, DAILY)
     wk = to_weekly(df)
     rw = detect(wk, WEEKLY)

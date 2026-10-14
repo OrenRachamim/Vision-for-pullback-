@@ -120,6 +120,8 @@ def weekly_candidates(df):
 # ---------------------------------------------------------------- walk-forward
 def scan_history(df, start=None, end=None, prefilter=True, daily=True):
     """מריץ את detect() יום-יום. מחזיר רשימת dict - שורה לכל יום עם איתות כלשהו."""
+    if hasattr(ps, "clean_event_volume"):      # הגרסה המקורית (v1) לא כוללת את התיקון
+        df = ps.clean_event_volume(df)
     idx = df.index
     lo = max(DAILY_WARMUP, idx.searchsorted(pd.Timestamp(start)) if start else 0)
     hi = idx.searchsorted(pd.Timestamp(end), side="right") if end else len(df)

@@ -135,3 +135,18 @@ def test_combo_require_uptrend_waits_for_uptrend_daily():
     hits = [h(10, w=W), h(12, d=down), h(16, d=up)]
     assert [c["t"] for c in bt.combo_signals(df, hits, 15)] == [12]
     assert [c["t"] for c in bt.combo_signals(df, hits, 15, require_uptrend=True)] == [16]
+
+
+def test_event_days_and_volume_cap():
+    idx = pd.bdate_range("2024-06-03", "2024-07-05")
+    ev = ps.event_days(idx)
+    assert list(idx[ev].date.astype(str)) == ["2024-06-21", "2024-06-28"]
+    # Good Friday 2024-03-29 is not the third Friday; 2022-06-17 third Friday is a trading day
+    idx2 = pd.bdate_range("2025-03-01", "2025-03-31")
+    assert list(idx2[ps.event_days(idx2)].date.astype(str)) == ["2025-03-21"]
+    df = pd.DataFrame(dict(Open=1.0, High=1.0, Low=1.0, Close=1.0, Volume=100.0), index=idx)
+    df.loc["2024-06-21", "Volume"] = 1000.0
+    out = ps.clean_event_volume(df)
+    assert out.loc["2024-06-21", "Volume"] == 100.0          # spike capped at past median
+    assert out.loc["2024-06-20", "Volume"] == 100.0          # normal days untouched
+    assert df.loc["2024-06-21", "Volume"] == 1000.0          # input not modified
