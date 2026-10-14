@@ -167,8 +167,18 @@ def combo_signals(df, hits, arm_days=15, require_uptrend=False):
 
 
 # ---------------------------------------------------------------- outcomes
-def simulate_trade(df, t, stop, target_r=2.0, max_hold=20):
-    """כניסה בפתיחת t+1. אם סטופ ויעד באותו נר - מניחים שהסטופ קרה קודם (שמרני)."""
+def atr14(df):
+    """ATR של 14 ימים (ממוצע פשוט של True Range). ערך ביום j משתמש רק בנתונים עד j."""
+    h, l, c = df["High"].values, df["Low"].values, df["Close"].values
+    pc = np.r_[c[0], c[:-1]]
+    tr = np.maximum(h - l, np.maximum(abs(h - pc), abs(l - pc)))
+    return pd.Series(tr).rolling(14, min_periods=1).mean().values
+
+
+def simulate_trade(df, t, stop, target_r=2.0, max_hold=20, trail_atr=None, atr=None):
+    """כניסה בפתיחת t+1. אם סטופ ויעד באותו נר - מניחים שהסטופ קרה קודם (שמרני).
+    trail_atr=k: בלי יעד קבוע; סטופ נגרר = הגבוה ביותר מאז הכניסה פחות k*ATR, מחושב עד אתמול
+    בלבד, ולעולם לא יורד. הסטופ ההתחלתי (base_lo) נשאר רצפה."""
     if t + 1 >= len(df):
         return None
     o, h, l, c = (df[k].values for k in ("Open", "High", "Low", "Close"))
@@ -177,16 +187,24 @@ def simulate_trade(df, t, stop, target_r=2.0, max_hold=20):
         return dict(entry=entry, exit=entry, R=np.nan, ret=0.0, exit_reason="gap_below_stop",
                     bars=0, mfe=np.nan, mae=np.nan)
     risk = entry - stop
-    target = entry + target_r * risk
+    init_stop = stop
+    target = np.inf if trail_atr else entry + target_r * risk
+    if trail_atr and atr is None:
+        atr = atr14(df)
     last = min(t + max_hold, len(df) - 1)
     reason, px, j = "time", c[last], last
+    hh = -np.inf
     for j in range(t + 1, last + 1):
+        if trail_atr and j > t + 1:
+            hh = max(hh, h[j - 1])
+            stop = max(stop, hh - trail_atr * atr[j - 1])
+        kind = "trail" if stop > init_stop else "stop"
         if j > t + 1 and o[j] <= stop:
-            reason, px = "stop_gap", o[j]; break
+            reason, px = kind + "_gap", o[j]; break
         if j > t + 1 and o[j] >= target:
             reason, px = "target_gap", o[j]; break
         if l[j] <= stop:
-            reason, px = "stop", stop; break
+            reason, px = kind, stop; break
         if h[j] >= target:
             reason, px = "target", target; break
     else:
@@ -212,7 +230,7 @@ def use_scanner(name):
     ps = importlib.import_module(name)
 
 
-def make_row(df, fwd, ticker, kind, hit, res, args):
+def make_row(df, fwd, ticker, kind, hit, res, args, atr=None):
     t = hit["t"]
     row = dict(ticker=ticker, date=df.index[t].date(), tpos=t, kind=kind,
                both=hit["daily"] is not None and hit["weekly"] is not None,
@@ -231,7 +249,8 @@ def make_row(df, fwd, ticker, kind, hit, res, args):
         row.update(peak_to_low=low_i - pk,
                    base_above_low=res["base_lo"] / df["Low"].iloc[low_i] - 1)
     row.update(fwd.iloc[t].to_dict())
-    tr = simulate_trade(df, t, res["base_lo"], args.target_r, args.max_hold)
+    tr = simulate_trade(df, t, res["base_lo"], args.target_r, args.max_hold,
+                        args.trail_atr, atr)
     if tr:
         row.update(tr)
     return row
@@ -250,15 +269,16 @@ def run_ticker(ticker, args):
     lo = bt_lo(df, args.start)
     hi = df.index.searchsorted(pd.Timestamp(args.end), side="right") if args.end else len(df)
     base = fwd.iloc[lo:hi].assign(ticker=ticker)
+    atr = atr14(df) if args.trail_atr else None
     rows = []
     for hit in hits:
         for kind in ("daily", "weekly"):
             if hit[kind] is not None:
-                rows.append(make_row(df, fwd, ticker, kind, hit, hit[kind], args))
+                rows.append(make_row(df, fwd, ticker, kind, hit, hit[kind], args, atr))
     if args.combo:
         for c in combo_signals(df, hits, args.arm_days, args.require_uptrend):
             wk = c["weekly_hit"]
-            row = make_row(df, fwd, ticker, "combo", c["daily_hit"], c["daily_hit"]["daily"], args)
+            row = make_row(df, fwd, ticker, "combo", c["daily_hit"], c["daily_hit"]["daily"], args, atr)
             row.update(weekly_date=df.index[wk["t"]].date(), weekly_tpos=wk["t"],
                        days_after_weekly=c["t"] - wk["t"], weekly_score=int(wk["weekly"]["score"]),
                        weekly_base_lo=float(wk["weekly"]["base_lo"]))
@@ -315,6 +335,7 @@ def trade_stats(g):
                 profit_factor=wins.sum() / -losses.sum() if losses.sum() < 0 else np.nan,
                 avg_risk_pct=g["risk_pct"].mean() if "risk_pct" in g else np.nan,
                 stopped=(g["exit_reason"].isin(["stop", "stop_gap"])).mean(),
+                trailed=(g["exit_reason"].isin(["trail", "trail_gap"])).mean(),
                 hit_target=(g["exit_reason"].isin(["target", "target_gap"])).mean(),
                 gap_below_stop=(g["exit_reason"] == "gap_below_stop").mean(),
                 total_R=r.sum())
@@ -333,12 +354,14 @@ def random_control(hits_by, sig, args, stride=3, seed=0):
         lo = bt_lo(df, args.start)
         hi = df.index.searchsorted(pd.Timestamp(args.end), side="right") if args.end else len(df)
         o = df["Open"].values
+        atr = atr14(df) if args.trail_atr else None
         # במצב require_uptrend משווים רק לימים אקראיים שגם בהם המחיר מעל SMA200 - השוואה הוגנת
         up = (df["Close"] > df["Close"].rolling(200).mean()).values if args.require_uptrend else None
         for t in range(lo, hi - 1, stride):
             if up is not None and not up[t]:
                 continue
-            r = simulate_trade(df, t, o[t + 1] * (1 - rng.choice(risks)), args.target_r, args.max_hold)
+            r = simulate_trade(df, t, o[t + 1] * (1 - rng.choice(risks)), args.target_r,
+                               args.max_hold, args.trail_atr, atr)
             if r:   # רק העמודות ש-trade_stats צריך - ביוניברס גדול יש מיליון עסקאות
                 rows.append((r["R"], r["exit_reason"], r.get("risk_pct", np.nan)))
     return pd.DataFrame(rows, columns=["R", "exit_reason", "risk_pct"])
@@ -354,9 +377,9 @@ def fmt_table(df, floats="{:.3f}"):
              "|" + "---|" * (len(cols) + 1)]
     for i, row in df.iterrows():
         cells = []
-        for v in row:
+        for col, v in zip(cols, row):
             if isinstance(v, (float, np.floating)) and v == v and float(v).is_integer() \
-                    and (abs(v) >= 10 or v == 0):
+                    and (abs(v) >= 10 or v == 0 or col in ("n", "trades")):
                 cells.append(f"{int(v):,}")
             elif isinstance(v, (float, np.floating)):
                 cells.append("" if np.isnan(v) else floats.format(v))
@@ -372,7 +395,10 @@ def build_report(sig, base, args, out, control=None):
          "",
          f"* tickers: {sig['ticker'].nunique() if len(sig) else 0} / {base['ticker'].nunique()}"
          f" | period: {args.start} -> {args.end or 'today'}",
-         f"* entry: next open | stop: base_lo | target: {args.target_r}R | max hold: {args.max_hold} days"
+         f"* entry: next open | stop: base_lo | "
+         + (f"exit: trailing stop {args.trail_atr}*ATR14 from highest high, no target"
+            if args.trail_atr else f"target: {args.target_r}R")
+         + f" | max hold: {args.max_hold} days"
          f" | dedupe cooldown: {args.cooldown} bars"
          + (f" | combo: daily signal within {args.arm_days} days after a weekly signal"
             if args.combo else ""),
@@ -561,6 +587,8 @@ def main(argv=None):
     ap.add_argument("--end", default=None)
     ap.add_argument("--target-r", type=float, default=2.0, help="profit target in R (default 2)")
     ap.add_argument("--max-hold", type=int, default=20, help="time exit in trading days")
+    ap.add_argument("--trail-atr", type=float, default=None,
+                    help="trailing stop: highest high since entry minus K*ATR14, no fixed target")
     ap.add_argument("--cooldown", type=int, default=5,
                     help="ignore repeat signals of the same ticker within N bars (0 = keep all)")
     ap.add_argument("--charts", type=int, default=12, help="how many signal charts to draw")

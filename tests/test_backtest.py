@@ -150,3 +150,23 @@ def test_event_days_and_volume_cap():
     assert out.loc["2024-06-21", "Volume"] == 100.0          # spike capped at past median
     assert out.loc["2024-06-20", "Volume"] == 100.0          # normal days untouched
     assert df.loc["2024-06-21", "Volume"] == 1000.0          # input not modified
+
+
+def test_trailing_stop():
+    atr = np.full(10, 2.0)
+    # entry 100 (bar 1), initial stop 95 -> risk 5; k=2, ATR=2 -> trail = highest high - 4
+    up = _bars([(99, 100, 98, 99), (100, 110, 99, 109), (109, 120, 112, 119), (118, 119, 110, 111)])
+    r = bt.simulate_trade(up, 0, 95, max_hold=10, trail_atr=2, atr=atr)
+    assert r["exit_reason"] == "trail" and r["exit"] == 116 and abs(r["R"] - 3.2) < 1e-12
+    # gap open below the trailing stop -> exit at the open
+    gap = _bars([(99, 100, 98, 99), (100, 110, 99, 109), (109, 120, 112, 119), (112, 113, 108, 110)])
+    r = bt.simulate_trade(gap, 0, 95, max_hold=10, trail_atr=2, atr=atr)
+    assert r["exit_reason"] == "trail_gap" and r["exit"] == 112
+    # entry bar uses only the initial stop; no fixed target even after a big run
+    run = _bars([(99, 100, 98, 99), (100, 150, 96, 149), (149, 160, 147, 159)])
+    r = bt.simulate_trade(run, 0, 95, max_hold=2, trail_atr=2, atr=atr)
+    assert r["exit_reason"] == "time" and r["exit"] == 159
+    # trailing stop never falls below the initial stop
+    flat = _bars([(99, 100, 98, 99), (100, 101, 96, 100), (100, 101, 94, 95)])
+    r = bt.simulate_trade(flat, 0, 95, max_hold=10, trail_atr=3, atr=np.full(10, 5.0))
+    assert r["exit_reason"] == "stop" and r["R"] == -1
