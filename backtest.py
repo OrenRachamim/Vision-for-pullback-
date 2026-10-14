@@ -241,6 +241,9 @@ def boot_ci(x, n=2000, seed=0):
     x = x[~np.isnan(x)]
     if len(x) < 5:
         return np.nan, np.nan
+    if len(x) > 5000:   # מדגם גדול: קירוב נורמלי, בלי מטריצה של n*len(x) בזיכרון
+        se = x.std(ddof=1) / math.sqrt(len(x))
+        return x.mean() - 1.96 * se, x.mean() + 1.96 * se
     rng = np.random.default_rng(seed)
     m = rng.choice(x, (n, len(x))).mean(1)
     return np.percentile(m, 2.5), np.percentile(m, 97.5)
@@ -308,7 +311,7 @@ def fmt_table(df, floats="{:.3f}"):
         cells = []
         for v in row:
             if isinstance(v, (float, np.floating)) and v == v and float(v).is_integer() \
-                    and abs(v) >= 10:
+                    and (abs(v) >= 10 or v == 0):
                 cells.append(f"{int(v):,}")
             elif isinstance(v, (float, np.floating)):
                 cells.append("" if np.isnan(v) else floats.format(v))
@@ -337,6 +340,8 @@ def build_report(sig, base, args, out, control=None):
     groups = {"daily": sig[sig.kind == "daily"],
               "weekly": sig[sig.kind == "weekly"],
               "BUY SIGNAL (daily+weekly)": sig[(sig.kind == "daily") & sig.both]}
+    focus = "weekly" if args.weekly_only else "daily"
+    groups = {k: g for k, g in groups.items() if len(g) or k == focus}
 
     # 1. forward returns vs baseline
     L += ["## 1. Forward returns vs baseline (next open -> close t+h)", ""]
@@ -381,7 +386,6 @@ def build_report(sig, base, args, out, control=None):
         L.append("")
 
     # 3. does the score / its components carry information?
-    focus = "weekly" if args.weekly_only else "daily"
     d = groups[focus]
     L += [f"## 3. {focus.title()} signals split by score and by each component", ""]
     parts = {f"score={s}": d[d.score == s] for s in sorted(d.score.unique())}
