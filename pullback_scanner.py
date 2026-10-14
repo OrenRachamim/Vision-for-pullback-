@@ -123,7 +123,8 @@ def detect(df, p):
     return best
 
 
-def plot(df, res, title, path, bars=80):
+def plot(df, res, title, path, bars=80, marks=()):
+    """marks: רשימת (תאריך, טקסט, צבע) - קו אנכי על הנר של התאריך (או הראשון אחריו)."""
     d = df.iloc[-bars:]
     off = len(df) - bars
     fig, (ax, axv) = plt.subplots(2, 1, figsize=(12, 7), sharex=True,
@@ -162,6 +163,13 @@ def plot(df, res, title, path, bars=80):
                     xytext=(0, -30), textcoords="offset points", ha="center",
                     arrowprops=dict(arrowstyle="->", color="#3B6D11"), color="#3B6D11")
         title += f"  |  score {res['score']}/100  drop {res['drop']:.1%}"
+    for when, text, col in marks:
+        pos = np.where(d.index >= pd.Timestamp(when))[0]
+        if len(pos):
+            for axx in (ax, axv):
+                axx.axvline(pos[0], color=col, ls=":", lw=1.8)
+            ax.text(pos[0], 0.03, f" {text}", transform=matplotlib.transforms.blended_transform_factory(
+                ax.transData, ax.transAxes), color=col, fontsize=9, fontweight="bold", va="bottom")
     ax.set_title(title)
     if res:
         ax.legend(loc="upper left", fontsize=8)

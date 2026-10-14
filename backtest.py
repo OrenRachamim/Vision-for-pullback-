@@ -491,7 +491,7 @@ def equity_chart(sig, path):
     plt.close(fig)
 
 
-def signal_chart(df, hit, kind, ticker, path, after=20):
+def signal_chart(df, hit, kind, ticker, path, after=20, marks=(), note=""):
     """גרף הסורק עצמו (ps.plot) ביום האיתות + `after` נרות של מה שקרה אחר כך."""
     t, t0 = hit["t"], hit["t0"]
     res = hit[kind]
@@ -505,16 +505,23 @@ def signal_chart(df, hit, kind, ticker, path, after=20):
         later = later[later.index > win_w.index[-1]]     # בלי שארית השבוע של יום האיתות
         ext = pd.concat([win_w, later.iloc[:after // 4 or 1]])
         bars = max(60, before) + (len(ext) - len(win_w))
-    ps.plot(ext, res, f"{ticker} {kind} signal {df.index[t].date()} (+{after} bars after)",
-            path, bars=min(bars, len(ext)))
+    ps.plot(ext, res, f"{ticker} {kind} signal {df.index[t].date()}{note} (+{after} bars after)",
+            path, bars=min(bars, len(ext)), marks=marks)
 
 
 def stacked_chart(df, daily_hit, weekly_hit, ticker, path, after=20):
     """גרף יומי ביום הקנייה למעלה, וגרף שבועי ביום האיתות השבועי שדרך את המניה למטה."""
     import matplotlib.pyplot as plt
     tmp = [path + s for s in (".d.png", ".w.png")]
-    signal_chart(df, daily_hit, "daily", ticker, tmp[0], after=after)
-    signal_chart(df, weekly_hit, "weekly", ticker, tmp[1], after=after)
+    d_day, w_day = df.index[daily_hit["t"]], df.index[weekly_hit["t"]]
+    gap = daily_hit["t"] - weekly_hit["t"]
+    # כל פאנל מסמן את התאריך של האיתות השני, כי לשני הגרפים יש סקאלת זמן שונה
+    signal_chart(df, daily_hit, "daily", ticker, tmp[0], after=after,
+                 note=f" = BUY, {gap} days after weekly",
+                 marks=[(w_day, f"W signal {w_day.date()}", "#7A4FB0")])
+    signal_chart(df, weekly_hit, "weekly", ticker, tmp[1], after=after,
+                 note=" = arming",
+                 marks=[(d_day, f"D buy {d_day.date()}", "#185FA5")])
     fig, axes = plt.subplots(2, 1, figsize=(12, 14))
     for ax, p in zip(axes, tmp):
         ax.imshow(plt.imread(p))
