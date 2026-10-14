@@ -140,6 +140,29 @@ def scan_history(df, start=None, end=None, prefilter=True, daily=True):
     return out
 
 
+def combo_signals(df, hits, arm_days=15):
+    """איתות משולב: איתות שבועי "דורך" את המניה, ורק אחריו (באותו יום או עד arm_days ימי מסחר)
+    איתות יומי מפעיל קנייה. סגירה מתחת ל-base_lo השבועי מבטלת את הדריכה.
+    כל הגדרה שבועית נותנת לכל היותר קנייה אחת (אחרי קנייה אין דריכה מחדש למשך arm_days)."""
+    if not hits:
+        return []
+    close = df["Close"].values
+    by_t = {h["t"]: h for h in hits}
+    out, armed, blocked_until = [], None, -1
+    for t in range(hits[0]["t"], min(hits[-1]["t"] + 1, len(df))):
+        if armed and (t > armed["until"] or close[t] < armed["lo"]):
+            armed = None
+        h = by_t.get(t)
+        if h is None:
+            continue
+        if h["weekly"] and armed is None and t > blocked_until:
+            armed = dict(hit=h, until=t + arm_days, lo=h["weekly"]["base_lo"])
+        if armed and h["daily"]:
+            out.append(dict(t=t, daily_hit=h, weekly_hit=armed["hit"]))
+            armed, blocked_until = None, t + arm_days
+    return out
+
+
 # ---------------------------------------------------------------- outcomes
 def simulate_trade(df, t, stop, target_r=2.0, max_hold=20):
     """כניסה בפתיחת t+1. אם סטופ ויעד באותו נר - מניחים שהסטופ קרה קודם (שמרני)."""
@@ -186,6 +209,35 @@ def use_scanner(name):
     ps = importlib.import_module(name)
 
 
+def make_row(df, fwd, ticker, kind, hit, res, args):
+    t = hit["t"]
+    row = dict(ticker=ticker, date=df.index[t].date(), tpos=t, kind=kind,
+               both=hit["daily"] is not None and hit["weekly"] is not None,
+               score=int(res["score"]), drop=float(res["drop"]),
+               slowing=bool(res["slowing"]), drying=bool(res["drying"]),
+               uptrend=bool(res["uptrend"]),
+               decline_len=res["slow"] - res["peak"],
+               slowdown_len=res["base"] - res["slow"],
+               base_len=res["rise"] - res["base"],
+               base_hi=float(res["base_hi"]), base_lo=float(res["base_lo"]),
+               close=df["Close"].iloc[t])
+    if kind != "weekly":
+        # מדידה ישירה על המחירים, זהה לשתי הגרסאות: כמה הבסיס מעל השפל האמיתי
+        pk = hit["t0"] + res["offset"] + res["peak"]
+        low_i = pk + int(np.argmin(df["Low"].values[pk:t]))
+        row.update(peak_to_low=low_i - pk,
+                   base_above_low=res["base_lo"] / df["Low"].iloc[low_i] - 1)
+    row.update(fwd.iloc[t].to_dict())
+    tr = simulate_trade(df, t, res["base_lo"], args.target_r, args.max_hold)
+    if tr:
+        row.update(tr)
+    return row
+
+
+def focus_kind(args):
+    return "combo" if args.combo else "weekly" if args.weekly_only else "daily"
+
+
 def run_ticker(ticker, args):
     use_scanner(args.scanner)
     df = load_history(ticker, args.cache_dir, args.csv_dir, args.refresh)
@@ -197,30 +249,16 @@ def run_ticker(ticker, args):
     base = fwd.iloc[lo:hi].assign(ticker=ticker)
     rows = []
     for hit in hits:
-        t = hit["t"]
-        for kind, res in (("daily", hit["daily"]), ("weekly", hit["weekly"])):
-            if res is None:
-                continue
-            row = dict(ticker=ticker, date=df.index[t].date(), tpos=t, kind=kind,
-                       both=hit["daily"] is not None and hit["weekly"] is not None,
-                       score=int(res["score"]), drop=float(res["drop"]),
-                       slowing=bool(res["slowing"]), drying=bool(res["drying"]),
-                       uptrend=bool(res["uptrend"]),
-                       decline_len=res["slow"] - res["peak"],
-                       slowdown_len=res["base"] - res["slow"],
-                       base_len=res["rise"] - res["base"],
-                       base_hi=float(res["base_hi"]), base_lo=float(res["base_lo"]),
-                       close=df["Close"].iloc[t])
-            if kind == "daily":
-                # מדידה ישירה על המחירים, זהה לשתי הגרסאות: כמה הבסיס מעל השפל האמיתי
-                pk = hit["t0"] + res["offset"] + res["peak"]
-                low_i = pk + int(np.argmin(df["Low"].values[pk:t]))
-                row.update(peak_to_low=low_i - pk,
-                           base_above_low=res["base_lo"] / df["Low"].iloc[low_i] - 1)
-            row.update(fwd.iloc[t].to_dict())
-            tr = simulate_trade(df, t, res["base_lo"], args.target_r, args.max_hold)
-            if tr:
-                row.update(tr)
+        for kind in ("daily", "weekly"):
+            if hit[kind] is not None:
+                rows.append(make_row(df, fwd, ticker, kind, hit, hit[kind], args))
+    if args.combo:
+        for c in combo_signals(df, hits, args.arm_days):
+            wk = c["weekly_hit"]
+            row = make_row(df, fwd, ticker, "combo", c["daily_hit"], c["daily_hit"]["daily"], args)
+            row.update(weekly_date=df.index[wk["t"]].date(), weekly_tpos=wk["t"],
+                       days_after_weekly=c["t"] - wk["t"], weekly_score=int(wk["weekly"]["score"]),
+                       weekly_base_lo=float(wk["weekly"]["base_lo"]))
             rows.append(row)
     return ticker, rows, base, hits, df
 
@@ -282,7 +320,7 @@ def trade_stats(g):
 def random_control(hits_by, sig, args, stride=3, seed=0):
     """אותם כללי יציאה בדיוק, אבל כניסה בימים אקראיים: סטופ במרחק אחוזי שנדגם מהאיתותים.
     אם האיתותים לא טובים מזה - הרווח מגיע מכללי היציאה ומהשוק העולה, לא מהדפוס."""
-    focus = "weekly" if args.weekly_only else "daily"
+    focus = focus_kind(args)
     risks = sig.loc[sig.kind == focus, "risk_pct"].dropna().values
     if not len(risks):
         return pd.DataFrame()
@@ -328,7 +366,9 @@ def build_report(sig, base, args, out, control=None):
          f"* tickers: {sig['ticker'].nunique() if len(sig) else 0} / {base['ticker'].nunique()}"
          f" | period: {args.start} -> {args.end or 'today'}",
          f"* entry: next open | stop: base_lo | target: {args.target_r}R | max hold: {args.max_hold} days"
-         f" | dedupe cooldown: {args.cooldown} bars",
+         f" | dedupe cooldown: {args.cooldown} bars"
+         + (f" | combo: daily signal within {args.arm_days} days after a weekly signal"
+            if args.combo else ""),
          f"* baseline = every trading day of the same tickers, same period"
          f" ({len(base):,} days)",
          ""]
@@ -339,8 +379,9 @@ def build_report(sig, base, args, out, control=None):
 
     groups = {"daily": sig[sig.kind == "daily"],
               "weekly": sig[sig.kind == "weekly"],
-              "BUY SIGNAL (daily+weekly)": sig[(sig.kind == "daily") & sig.both]}
-    focus = "weekly" if args.weekly_only else "daily"
+              "BUY SIGNAL (daily+weekly)": sig[(sig.kind == "daily") & sig.both],
+              "combo": sig[sig.kind == "combo"]}
+    focus = focus_kind(args)
     groups = {k: g for k, g in groups.items() if len(g) or k == focus}
 
     # 1. forward returns vs baseline
@@ -434,7 +475,8 @@ def equity_chart(sig, path):
     fig, ax = plt.subplots(figsize=(11, 4.5))
     for name, g, col in (("daily", sig[sig.kind == "daily"], "#185FA5"),
                          ("weekly", sig[sig.kind == "weekly"], "#A32D2D"),
-                         ("daily+weekly", sig[(sig.kind == "daily") & sig.both], "#3B6D11")):
+                         ("daily+weekly", sig[(sig.kind == "daily") & sig.both], "#3B6D11"),
+                         ("combo weekly->daily", sig[sig.kind == "combo"], "#7A4FB0")):
         g = g.dropna(subset=["R"]).sort_values("date")
         if len(g):
             ax.plot(pd.to_datetime(g["date"]), g["R"].cumsum(), label=f"{name} (n={len(g)})",
@@ -467,12 +509,33 @@ def signal_chart(df, hit, kind, ticker, path, after=20):
             path, bars=min(bars, len(ext)))
 
 
+def stacked_chart(df, daily_hit, weekly_hit, ticker, path, after=20):
+    """גרף יומי ביום הקנייה למעלה, וגרף שבועי ביום האיתות השבועי שדרך את המניה למטה."""
+    import matplotlib.pyplot as plt
+    tmp = [path + s for s in (".d.png", ".w.png")]
+    signal_chart(df, daily_hit, "daily", ticker, tmp[0], after=after)
+    signal_chart(df, weekly_hit, "weekly", ticker, tmp[1], after=after)
+    fig, axes = plt.subplots(2, 1, figsize=(12, 14))
+    for ax, p in zip(axes, tmp):
+        ax.imshow(plt.imread(p))
+        ax.axis("off")
+    fig.tight_layout()
+    fig.savefig(path, dpi=100)
+    plt.close(fig)
+    for p in tmp:
+        os.remove(p)
+
+
 # ---------------------------------------------------------------- main
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Walk-forward backtest for pullback_scanner.py")
     ap.add_argument("tickers", nargs="*", help="default: built-in large-cap universe")
     ap.add_argument("--universe", nargs="+", default=[],
                     help="text file(s) with one ticker per line, e.g. universes/sp500.txt")
+    ap.add_argument("--combo", action="store_true",
+                    help="weekly signal arms the stock, a later daily signal triggers the buy")
+    ap.add_argument("--arm-days", type=int, default=15,
+                    help="combo: trading days after the weekly signal in which a daily signal counts")
     ap.add_argument("--weekly-only", action="store_true",
                     help="skip daily detection (much faster for large universes)")
     ap.add_argument("--start", default="2016-01-01")
@@ -521,7 +584,9 @@ def main(argv=None):
                 continue
             nd = sum(r["kind"] == "daily" for r in rows)
             nw = sum(r["kind"] == "weekly" for r in rows)
-            print(f"{tk:6s} {len(df):5d} bars  daily signals={nd:3d}  weekly signals={nw:3d}")
+            nc = sum(r["kind"] == "combo" for r in rows)
+            print(f"{tk:6s} {len(df):5d} bars  daily signals={nd:3d}  weekly signals={nw:3d}"
+                  + (f"  combo={nc:3d}" if args.combo else ""))
             all_rows += rows
             bases.append(base)
             hits_by[tk] = (hits, df)
@@ -544,6 +609,18 @@ def main(argv=None):
 def _draw_samples(sig, hits_by, args):
     """דוגמה אקראית (קבועה) של איתותים יומיים, כדי לבדוק בעין שהדפוס באמת נראה כמו פולבק."""
     if args.charts <= 0:
+        return
+    if args.combo:
+        pick = sig[sig.kind == "combo"]
+        for _, r in pick.sample(min(args.charts, len(pick)), random_state=1).iterrows():
+            hits, df = hits_by[r["ticker"]]
+            by_t = {h["t"]: h for h in hits}
+            name = f"{r['ticker']}_{r['date']}_combo_{r.get('exit_reason', 'na')}.png"
+            try:
+                stacked_chart(df, by_t[r["tpos"]], by_t[r["weekly_tpos"]], r["ticker"],
+                              os.path.join(args.out, "charts", name))
+            except Exception as e:
+                print("chart error", name, e)
         return
     pick = sig[sig.kind == "daily"]
     pick = pick.sample(min(args.charts, len(pick)), random_state=1) if len(pick) else pick

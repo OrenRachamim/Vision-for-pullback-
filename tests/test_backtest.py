@@ -103,3 +103,25 @@ if __name__ == "__main__":
         if name.startswith("test_"):
             fn()
             print("ok", name)
+
+
+def test_combo_weekly_arms_then_daily_triggers():
+    df = _bars([(100, 101, 99, 100)] * 60)
+    W = dict(base_lo=95.0, score=50)
+    D = dict(base_lo=98.0, score=50)
+    h = lambda t, d=None, w=None: dict(t=t, t0=0, daily=d, weekly=w)
+
+    # daily before weekly does not count; daily inside the window does
+    out = bt.combo_signals(df, [h(5, d=D), h(10, w=W), h(14, d=D)], arm_days=15)
+    assert [(c["t"], c["weekly_hit"]["t"]) for c in out] == [(14, 10)]
+    # same day counts
+    assert [c["t"] for c in bt.combo_signals(df, [h(10, d=D, w=W)], 15)] == [10]
+    # daily after the window does not count
+    assert bt.combo_signals(df, [h(10, w=W), h(26, d=D)], 15) == []
+    # close below the weekly base_lo cancels the arming
+    low = df.copy()
+    low.iloc[12, low.columns.get_loc("Close")] = 90
+    assert bt.combo_signals(low, [h(10, w=W), h(14, d=D)], 15) == []
+    # one buy per weekly setup: repeated weekly days right after a buy do not re-arm
+    out = bt.combo_signals(df, [h(10, w=W), h(11, d=D, w=W), h(13, d=D, w=W)], 15)
+    assert [c["t"] for c in out] == [11]

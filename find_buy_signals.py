@@ -1,6 +1,7 @@
 """
-find_buy_signals.py - מוצא בהיסטוריה ימים שבהם גם הקריטריון היומי וגם השבועי מתקיימים
-(BUY SIGNAL של הסורק), ומצייר לכל אחד גרף יומי + גרף שבועי של אותו יום, אחד מעל השני.
+find_buy_signals.py - מוצא בהיסטוריה איתותי קנייה משולבים: איתות שבועי "דורך" את המניה,
+ואחריו (באותו יום או עד arm_days ימי מסחר) איתות יומי מפעיל קנייה.
+לכל איתות מצייר גרף יומי ביום הקנייה + גרף שבועי ביום האיתות השבועי, אחד מעל השני.
 
 הרצה:
     python find_buy_signals.py AAPL MSFT NVDA
@@ -13,43 +14,27 @@ from concurrent.futures import ProcessPoolExecutor
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import pandas as pd
 
 import backtest as bt
-import pullback_scanner as ps
 
 
-def find(ticker, start, end, cache_dir):
+def find(ticker, start, end, cache_dir, arm_days):
     df = bt.load_history(ticker, cache_dir)
     hits = bt.scan_history(df, start, end)
-    return ticker, [h for h in hits if h["daily"] and h["weekly"]], df
-
-
-def draw(ticker, df, hit, out_dir, after=20):
-    tmp = [os.path.join(out_dir, f"_{ticker}_{k}.png") for k in ("daily", "weekly")]
-    bt.signal_chart(df, hit, "daily", ticker, tmp[0], after=after)
-    bt.signal_chart(df, hit, "weekly", ticker, tmp[1], after=after)
-    imgs = [plt.imread(p) for p in tmp]
-    fig, axes = plt.subplots(2, 1, figsize=(12, 14))
-    for ax, img in zip(axes, imgs):
-        ax.imshow(img)
-        ax.axis("off")
-    fig.tight_layout()
-    path = os.path.join(out_dir, f"{ticker}_{df.index[hit['t']].date()}.png")
-    fig.savefig(path, dpi=100)
-    plt.close(fig)
-    for p in tmp:
-        os.remove(p)
-    return path
+    return ticker, bt.combo_signals(df, hits, arm_days), df
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Find days where daily AND weekly criteria both hold")
+    ap = argparse.ArgumentParser(description="Find weekly-then-daily combined buy signals")
     ap.add_argument("tickers", nargs="*")
     ap.add_argument("--universe", nargs="+", default=[])
     ap.add_argument("--start", default="2016-01-01")
     ap.add_argument("--end", default=None)
+    ap.add_argument("--arm-days", type=int, default=15,
+                    help="trading days after the weekly signal in which a daily signal counts")
+    ap.add_argument("--max-hold", type=int, default=10, help="time exit for the trade column")
+    ap.add_argument("--target-r", type=float, default=2.0)
     ap.add_argument("--max", type=int, default=10, help="how many charts to draw (newest first)")
     ap.add_argument("--out", default="buy_signals")
     ap.add_argument("--cache-dir", default="data")
@@ -64,35 +49,39 @@ def main(argv=None):
 
     found = []
     with ProcessPoolExecutor(max_workers=max(1, args.jobs)) as ex:
-        futs = [ex.submit(find, tk, args.start, args.end, args.cache_dir) for tk in tickers]
+        futs = [ex.submit(find, tk, args.start, args.end, args.cache_dir, args.arm_days)
+                for tk in tickers]
         for fu in futs:
             try:
-                tk, hits, df = fu.result()
+                tk, combos, df = fu.result()
             except Exception as e:
                 print("error:", e)
                 continue
-            found += [(tk, h, df) for h in hits]
+            found += [(tk, c, df) for c in combos]
 
     rows = []
-    for tk, h, df in found:
-        t, d, w = h["t"], h["daily"], h["weekly"]
+    for tk, c, df in found:
+        t, d, w = c["t"], c["daily_hit"]["daily"], c["weekly_hit"]["weekly"]
         fwd = bt.forward_returns(df).iloc[t]
-        tr = bt.simulate_trade(df, t, d["base_lo"]) or {}
-        rows.append(dict(ticker=tk, date=df.index[t].date(), close=df["Close"].iloc[t],
+        tr = bt.simulate_trade(df, t, d["base_lo"], args.target_r, args.max_hold) or {}
+        rows.append(dict(ticker=tk, date=df.index[t].date(),
+                         weekly_date=df.index[c["weekly_hit"]["t"]].date(),
+                         days_after_weekly=t - c["weekly_hit"]["t"], close=df["Close"].iloc[t],
                          daily_score=int(d["score"]), weekly_score=int(w["score"]),
-                         daily_drop=d["drop"], weekly_drop=w["drop"],
                          entry=d["base_hi"], stop=d["base_lo"],
-                         fwd20=fwd["fwd20"], fwd60=fwd["fwd60"],
+                         fwd5=fwd["fwd5"], fwd10=fwd["fwd10"], fwd20=fwd["fwd20"],
                          trade_R=tr.get("R"), exit_reason=tr.get("exit_reason")))
     table = pd.DataFrame(rows).sort_values("date", ascending=False) if rows else pd.DataFrame()
     table.to_csv(os.path.join(args.out, "buy_signals.csv"), index=False)
-    print(f"{len(table)} days with daily AND weekly signal")
+    print(f"{len(table)} combined buy signals (weekly, then daily within {args.arm_days} days)")
     if len(table):
         print(table.head(args.max).to_string(index=False))
-    by_key = {(tk, df.index[h["t"]].date()): (tk, h, df) for tk, h, df in found}
+    by_key = {(tk, df.index[c["t"]].date()): (tk, c, df) for tk, c, df in found}
     for _, r in table.head(args.max).iterrows():
-        tk, h, df = by_key[(r["ticker"], r["date"])]
-        print("chart:", draw(tk, df, h, args.out))
+        tk, c, df = by_key[(r["ticker"], r["date"])]
+        path = os.path.join(args.out, f"{tk}_{r['date']}.png")
+        bt.stacked_chart(df, c["daily_hit"], c["weekly_hit"], tk, path)
+        print("chart:", path)
 
 
 if __name__ == "__main__":
