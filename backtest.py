@@ -35,12 +35,13 @@ DEFAULT_UNIVERSE = [
 ]
 HORIZONS = (5, 10, 20, 60)
 LIVE_WINDOW_DAYS = 730          # load() בסורק מוריד period="2y"
+DATA_START = "2010-01-01"       # מספיק לחימום + חלון של שנתיים לפני 2016
 DAILY_WARMUP = 261              # מתחת לזה הסורק עובר מ-SMA200 ל-SMA40
 
 
 # ---------------------------------------------------------------- data
 def load_history(ticker, cache_dir="data", csv_dir=None, refresh=False):
-    """היסטוריה יומית מלאה. CSV משלך > מטמון מקומי > yfinance (period=max)."""
+    """היסטוריה יומית מלאה. CSV משלך > מטמון מקומי > yfinance (מ-DATA_START)."""
     if csv_dir:
         path = os.path.join(csv_dir, f"{ticker}.csv")
         df = pd.read_csv(path, index_col=0, parse_dates=True)
@@ -50,7 +51,7 @@ def load_history(ticker, cache_dir="data", csv_dir=None, refresh=False):
             df = pd.read_csv(path, index_col=0, parse_dates=True)
         else:
             import yfinance as yf
-            df = yf.download(ticker, period="max", interval="1d",
+            df = yf.download(ticker, start=DATA_START, interval="1d",
                              progress=False, auto_adjust=True)
             if df.empty:
                 raise ValueError("no data returned")
@@ -65,6 +66,29 @@ def load_history(ticker, cache_dir="data", csv_dir=None, refresh=False):
     df.index = pd.to_datetime(df.index).tz_localize(None)
     df = df[["Open", "High", "Low", "Close", "Volume"]].astype(float).dropna()
     return df[df["Volume"] > 0].sort_index()
+
+
+def prefetch(tickers, cache_dir="data", chunk=50):
+    """מוריד במנות את כל הטיקרים שעוד אין להם מטמון - הרבה יותר מהיר מאחד-אחד."""
+    missing = [t for t in tickers if not os.path.exists(os.path.join(cache_dir, f"{t}.csv"))]
+    if not missing:
+        return
+    import yfinance as yf
+    os.makedirs(cache_dir, exist_ok=True)
+    today = pd.Timestamp.now(tz="America/New_York").normalize().tz_localize(None)
+    for i in range(0, len(missing), chunk):
+        part = missing[i:i + chunk]
+        print(f"downloading {i + len(part)}/{len(missing)} ...", flush=True)
+        raw = yf.download(part, start=DATA_START, interval="1d", progress=False,
+                          auto_adjust=True, group_by="ticker", threads=True)
+        for t in part:
+            try:
+                df = raw[t][["Open", "High", "Low", "Close", "Volume"]].dropna()
+            except KeyError:
+                continue
+            df = df[df.index < today]
+            if len(df):
+                df.to_csv(os.path.join(cache_dir, f"{t}.csv"))
 
 
 # ---------------------------------------------------------------- prefilters
@@ -94,12 +118,14 @@ def weekly_candidates(df):
 
 
 # ---------------------------------------------------------------- walk-forward
-def scan_history(df, start=None, end=None, prefilter=True):
+def scan_history(df, start=None, end=None, prefilter=True, daily=True):
     """מריץ את detect() יום-יום. מחזיר רשימת dict - שורה לכל יום עם איתות כלשהו."""
     idx = df.index
     lo = max(DAILY_WARMUP, idx.searchsorted(pd.Timestamp(start)) if start else 0)
     hi = idx.searchsorted(pd.Timestamp(end), side="right") if end else len(df)
     dcand = daily_candidates(df) if prefilter else np.ones(len(df), bool)
+    if not daily:
+        dcand = np.zeros(len(df), bool)
     wcand = weekly_candidates(df) if prefilter else np.ones(len(df), bool)
     out = []
     for t in range(lo, hi):
@@ -163,7 +189,8 @@ def use_scanner(name):
 def run_ticker(ticker, args):
     use_scanner(args.scanner)
     df = load_history(ticker, args.cache_dir, args.csv_dir, args.refresh)
-    hits = scan_history(df, args.start, args.end, prefilter=not args.no_prefilter)
+    hits = scan_history(df, args.start, args.end, prefilter=not args.no_prefilter,
+                        daily=not args.weekly_only)
     fwd = forward_returns(df)
     lo = bt_lo(df, args.start)
     hi = df.index.searchsorted(pd.Timestamp(args.end), side="right") if args.end else len(df)
@@ -252,7 +279,8 @@ def trade_stats(g):
 def random_control(hits_by, sig, args, stride=3, seed=0):
     """אותם כללי יציאה בדיוק, אבל כניסה בימים אקראיים: סטופ במרחק אחוזי שנדגם מהאיתותים.
     אם האיתותים לא טובים מזה - הרווח מגיע מכללי היציאה ומהשוק העולה, לא מהדפוס."""
-    risks = sig.loc[sig.kind == "daily", "risk_pct"].dropna().values
+    focus = "weekly" if args.weekly_only else "daily"
+    risks = sig.loc[sig.kind == focus, "risk_pct"].dropna().values
     if not len(risks):
         return pd.DataFrame()
     rng = np.random.default_rng(seed)
@@ -340,7 +368,7 @@ def build_report(sig, base, args, out, control=None):
     t2.index.name = "group"
     L += [fmt_table(t2), "",
           "> CONTROL = same entry/stop/target/time rules on every 3rd trading day of the same tickers,",
-          "> stop distance drawn from the daily signals' risk distribution. The pattern adds value",
+          "> stop distance drawn from the tested signals' risk distribution. The pattern adds value",
           "> only if its avg_R is clearly above the control's.", ""]
     if control is not None and len(control):
         cr = control[control["exit_reason"] != "open"]["R"]
@@ -353,8 +381,9 @@ def build_report(sig, base, args, out, control=None):
         L.append("")
 
     # 3. does the score / its components carry information?
-    d = groups["daily"]
-    L += ["## 3. Daily signals split by score and by each component", ""]
+    focus = "weekly" if args.weekly_only else "daily"
+    d = groups[focus]
+    L += [f"## 3. {focus.title()} signals split by score and by each component", ""]
     parts = {f"score={s}": d[d.score == s] for s in sorted(d.score.unique())}
     for f in ("slowing", "drying", "uptrend"):
         parts[f"{f}=True"] = d[d[f]]
@@ -366,12 +395,12 @@ def build_report(sig, base, args, out, control=None):
     L += [fmt_table(t3), ""]
 
     L += ["Phase lengths found by detect() (bars):", "",
-          fmt_table(d[["decline_len", "slowdown_len", "base_len", "peak_to_low",
-                      "base_above_low"]].describe()
+          fmt_table(d[[c for c in ("decline_len", "slowdown_len", "base_len", "peak_to_low",
+                               "base_above_low") if c in d]].describe()
                     .T[["mean", "min", "50%", "max"]].rename_axis("phase")), ""]
 
     # 4. per year
-    L += ["## 4. Daily signals per year", ""]
+    L += [f"## 4. {focus.title()} signals per year", ""]
     yr = d.assign(year=pd.to_datetime(d["date"]).dt.year)
     t4 = pd.DataFrame({y: {**trade_stats(g), "fwd20": g["fwd20"].mean()}
                        for y, g in yr.groupby("year")}).T
@@ -380,10 +409,13 @@ def build_report(sig, base, args, out, control=None):
     L += [fmt_table(t4), ""]
 
     # 5. per ticker
-    L += ["## 5. Daily signals per ticker", ""]
+    L += [f"## 5. {focus.title()} signals per ticker"
+          + (" (15 worst and 15 best by total_R)" if d["ticker"].nunique() > 40 else ""), ""]
     t5 = pd.DataFrame({tk: {**trade_stats(g), "fwd20": g["fwd20"].mean()}
                        for tk, g in d.groupby("ticker")}).T
     t5 = t5[["n", "win_rate", "avg_R", "total_R", "fwd20"]].sort_values("total_R")
+    if len(t5) > 40:
+        t5 = pd.concat([t5.head(15), t5.tail(15)])
     t5.index.name = "ticker"
     L += [fmt_table(t5), ""]
 
@@ -434,6 +466,10 @@ def signal_chart(df, hit, kind, ticker, path, after=20):
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Walk-forward backtest for pullback_scanner.py")
     ap.add_argument("tickers", nargs="*", help="default: built-in large-cap universe")
+    ap.add_argument("--universe", nargs="+", default=[],
+                    help="text file(s) with one ticker per line, e.g. universes/sp500.txt")
+    ap.add_argument("--weekly-only", action="store_true",
+                    help="skip daily detection (much faster for large universes)")
     ap.add_argument("--start", default="2016-01-01")
     ap.add_argument("--end", default=None)
     ap.add_argument("--target-r", type=float, default=2.0, help="profit target in R (default 2)")
@@ -450,11 +486,16 @@ def main(argv=None):
     ap.add_argument("--no-prefilter", action="store_true", help="slow path, for verification")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
     args = ap.parse_args(argv)
-    tickers = [t.upper() for t in args.tickers] or DEFAULT_UNIVERSE
+    tickers = [t.upper() for t in args.tickers]
+    for path in args.universe:
+        tickers += [ln.strip().upper() for ln in open(path, encoding="utf-8") if ln.strip()]
+    tickers = list(dict.fromkeys(tickers)) or DEFAULT_UNIVERSE
     use_scanner(args.scanner)
     os.makedirs(os.path.join(args.out, "charts"), exist_ok=True)
 
-    # הורדה סדרתית (yfinance לא אוהב מקביליות), סריקה במקביל
+    # הורדה במנות, סריקה במקביל
+    if not args.csv_dir and not args.refresh:
+        prefetch(tickers, args.cache_dir)
     ok = []
     for tk in tickers:
         try:
@@ -502,7 +543,8 @@ def _draw_samples(sig, hits_by, args):
     pick = sig[sig.kind == "daily"]
     pick = pick.sample(min(args.charts, len(pick)), random_state=1) if len(pick) else pick
     wk = sig[sig.kind == "weekly"]
-    pick = pd.concat([pick, wk.sample(min(max(args.charts // 3, 1), len(wk)), random_state=1)
+    n_wk = args.charts if args.weekly_only else max(args.charts // 3, 1)
+    pick = pd.concat([pick, wk.sample(min(n_wk, len(wk)), random_state=1)
                       if len(wk) else wk])
     for _, r in pick.iterrows():
         hits, df = hits_by[r["ticker"]]

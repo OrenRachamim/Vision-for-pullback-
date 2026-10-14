@@ -6,3 +6,4 @@ __pycache__/
 *_weekly.png
 results/run_log.txt
 results*/run_log.txt
+*.log
