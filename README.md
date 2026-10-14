@@ -18,6 +18,7 @@ python backtest.py AAPL NVDA AMD --start 2019-01-01 --charts 30
 python backtest.py --target-r 3 --max-hold 40 # כללי יציאה אחרים
 python backtest.py --csv-dir my_data SPY      # נתונים משלך: my_data/SPY.csv עם Date,Open,High,Low,Close,Volume
 python backtest.py --scanner pullback_scanner_v1 --out results_v1   # הגרסה המקורית
+python backtest.py --universe universes/sp500.txt universes/sp400.txt --weekly-only   # ~900 מניות, שבועי בלבד
 python -m pytest -q tests                     # בדיקות תקינות למנוע
 ```
 
@@ -42,6 +43,8 @@ python -m pytest -q tests                     # בדיקות תקינות למנ
 | `--cooldown` | 5 | איתות חוזר על אותה מניה תוך N נרות נספר פעם אחת |
 | `--charts` | 12 | כמה גרפי איתות לצייר (מדגם אקראי קבוע) |
 | `--no-prefilter` | כבוי | ריצה איטית בלי סינון מוקדם, לאימות |
+| `--universe` | - | קובץ/קבצים עם טיקר בכל שורה (יש `universes/sp500.txt`, `sp400.txt`) |
+| `--weekly-only` | כבוי | רק הזיהוי השבועי, הרבה יותר מהיר ליוניברס גדול |
 | `--scanner` | pullback_scanner | איזו גרסה לבדוק |
 | `--jobs` | מספר ליבות | עיבוד מקבילי |
 
