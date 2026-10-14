@@ -65,17 +65,22 @@ def detect(df, p):
     if not (c[last] > o[last] and v[last] > p["vol_mult"] * vol_avg):
         return None
 
-    # שפל הירידה האמיתי: הנמוך ביותר ב-lookback הנרות שלפני הפריצה (כולל הבסיס)
+    # נקודת התחלה: השפל הנמוך ביותר ב-lookback הנרות שלפני הפריצה (כולל הבסיס)
     w0 = max(0, last - p["lookback"])
-    tr = w0 + int(np.argmin(l[w0:last]))
-    trough = l[tr]
-    # השיא: הגבוה ביותר מאז הפעם האחרונה שהמחיר היה מתחת לשפל, עד peak_lookback נרות אחורה
-    p0 = max(0, tr - p["peak_lookback"])
-    below = np.where(l[p0:tr] < trough)[0]
+    tr0 = w0 + int(np.argmin(l[w0:last]))
+    # השיא: הגבוה ביותר מאז הפעם האחרונה שהמחיר היה מתחת לשפל הזה (עד peak_lookback נרות אחורה),
+    # כולל ראלי שאחרי השפל - כך הירידה הנמדדת היא תמיד הגל האחרון לפני הבסיס
+    p0 = max(0, tr0 - p["peak_lookback"])
+    below = np.where(l[p0:tr0] < l[tr0])[0]
     s0 = p0 + int(below[-1]) + 1 if len(below) else p0
-    if s0 >= tr:
+    if s0 >= tr0:
         return None
-    pk = s0 + int(np.argmax(h[s0:tr]))
+    pk = s0 + int(np.argmax(h[s0:last]))
+    if pk + 1 >= last:
+        return None
+    # השפל האמיתי של הגל: הנמוך ביותר אחרי השיא
+    tr = pk + 1 + int(np.argmin(l[pk + 1:last]))
+    trough = l[tr]
     drop = (h[pk] - trough) / h[pk]
     if drop < p["min_drop"] or tr - pk < p["min_decline"]:
         return None
