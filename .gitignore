@@ -5,3 +5,4 @@ __pycache__/
 *_daily.png
 *_weekly.png
 results/run_log.txt
+results*/run_log.txt

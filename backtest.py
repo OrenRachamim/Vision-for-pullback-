@@ -17,6 +17,7 @@ backtest.py - מנוע בדיקה היסטורית (walk-forward) ל-pullback_sc
 תוצרים בתיקיית results/: summary.md, signals.csv, charts/*.png, equity.png
 """
 import argparse
+import importlib
 import math
 import os
 import sys
@@ -153,7 +154,14 @@ def forward_returns(df):
                         index=df.index)
 
 
+def use_scanner(name):
+    """בוחר איזו גרסה של הסורק נבדקת (pullback_scanner / pullback_scanner_v1)."""
+    global ps
+    ps = importlib.import_module(name)
+
+
 def run_ticker(ticker, args):
+    use_scanner(args.scanner)
     df = load_history(ticker, args.cache_dir, args.csv_dir, args.refresh)
     hits = scan_history(df, args.start, args.end, prefilter=not args.no_prefilter)
     fwd = forward_returns(df)
@@ -176,6 +184,12 @@ def run_ticker(ticker, args):
                        base_len=res["rise"] - res["base"],
                        base_hi=float(res["base_hi"]), base_lo=float(res["base_lo"]),
                        close=df["Close"].iloc[t])
+            if kind == "daily":
+                # מדידה ישירה על המחירים, זהה לשתי הגרסאות: כמה הבסיס מעל השפל האמיתי
+                pk = hit["t0"] + res["offset"] + res["peak"]
+                low_i = pk + int(np.argmin(df["Low"].values[pk:t]))
+                row.update(peak_to_low=low_i - pk,
+                           base_above_low=res["base_lo"] / df["Low"].iloc[low_i] - 1)
             row.update(fwd.iloc[t].to_dict())
             tr = simulate_trade(df, t, res["base_lo"], args.target_r, args.max_hold)
             if tr:
@@ -278,7 +292,7 @@ def fmt_table(df, floats="{:.3f}"):
 
 # ---------------------------------------------------------------- report
 def build_report(sig, base, args, out, control=None):
-    L = [f"# Pullback scanner - backtest report",
+    L = [f"# Pullback scanner - backtest report (`{args.scanner}.py`)",
          "",
          f"* tickers: {sig['ticker'].nunique() if len(sig) else 0} / {base['ticker'].nunique()}"
          f" | period: {args.start} -> {args.end or 'today'}",
@@ -352,7 +366,8 @@ def build_report(sig, base, args, out, control=None):
     L += [fmt_table(t3), ""]
 
     L += ["Phase lengths found by detect() (bars):", "",
-          fmt_table(d[["decline_len", "slowdown_len", "base_len"]].describe()
+          fmt_table(d[["decline_len", "slowdown_len", "base_len", "peak_to_low",
+                      "base_above_low"]].describe()
                     .T[["mean", "min", "50%", "max"]].rename_axis("phase")), ""]
 
     # 4. per year
@@ -427,6 +442,8 @@ def main(argv=None):
                     help="ignore repeat signals of the same ticker within N bars (0 = keep all)")
     ap.add_argument("--charts", type=int, default=12, help="how many signal charts to draw")
     ap.add_argument("--out", default="results")
+    ap.add_argument("--scanner", default="pullback_scanner",
+                    help="module to test: pullback_scanner (fixed) or pullback_scanner_v1 (original)")
     ap.add_argument("--cache-dir", default="data")
     ap.add_argument("--csv-dir", default=None, help="read <TICKER>.csv from here instead of yfinance")
     ap.add_argument("--refresh", action="store_true", help="re-download instead of using cache")
@@ -434,6 +451,7 @@ def main(argv=None):
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
     args = ap.parse_args(argv)
     tickers = [t.upper() for t in args.tickers] or DEFAULT_UNIVERSE
+    use_scanner(args.scanner)
     os.makedirs(os.path.join(args.out, "charts"), exist_ok=True)
 
     # הורדה סדרתית (yfinance לא אוהב מקביליות), סריקה במקביל

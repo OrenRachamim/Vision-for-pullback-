@@ -13,11 +13,18 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.transforms
 from matplotlib.patches import Rectangle
 
 # ---------- ספים (לכוונון) ----------
-DAILY = dict(min_drop=0.05, lookback=40, base_min=3, base_max=10, vol_mult=1.5)
-WEEKLY = dict(min_drop=0.10, lookback=26, base_min=2, base_max=6, vol_mult=1.3)
+# peak_lookback - כמה נרות אחורה (מהשפל) מותר לחפש את השיא שממנו התחילה הירידה
+# min_decline   - מינימום נרות בין השיא לשפל (מסנן "ירידה" של גאפ אחד)
+# near_low      - הבסיס חייב להיווצר עד X% מעל השפל האמיתי של הירידה
+DAILY = dict(min_drop=0.05, lookback=40, base_min=3, base_max=10, vol_mult=1.5,
+             peak_lookback=120, min_decline=5, near_low=0.03)
+WEEKLY = dict(min_drop=0.10, lookback=26, base_min=2, base_max=6, vol_mult=1.3,
+              peak_lookback=52, min_decline=3, near_low=0.05)
+SLOW_SPLIT = 0.75   # שלב ההאטה מתחיל אחרי שהמחיר השלים 75% מהירידה (בסגירה)
 
 PHASE_COLORS = {"decline": "#F7C1C1", "slowdown": "#FAC775",
                 "base": "#B5D4F4", "rise": "#C0DD97"}
@@ -43,59 +50,71 @@ def detect(df, p):
     """מחזיר dict עם גבולות ארבעת השלבים, או None אם אין דפוס בסוף הגרף."""
     if len(df) < p["lookback"] + 30:
         return None
-    d = df.iloc[-p["lookback"]:].copy()
-    vol_avg = df["Volume"].rolling(20).mean().iloc[-p["lookback"]:]
-    body = (d["Close"] - d["Open"]).abs()
-    atr = (d["High"] - d["Low"]).rolling(5).mean()
-    c, lo, hi = d["Close"].values, d["Low"].values, d["High"].values
+    d = df.iloc[-(p["peak_lookback"] + p["lookback"] + p["base_max"] + 2):]
+    o, h, l, c, v = (d[k].values for k in ("Open", "High", "Low", "Close", "Volume"))
+    body = np.abs(c - o)
+    vol_avg = df["Volume"].rolling(20).mean().iloc[-1]
 
     # מסנן מגמה: מחיר מעל SMA200 (או SMA40 בשבועי)
     sma_len = 200 if len(df) > 260 else 40
     sma = df["Close"].rolling(sma_len).mean().iloc[-1]
     uptrend = bool(np.isnan(sma) or df["Close"].iloc[-1] > sma)
 
-    # שלב 4: נר אחרון ירוק שנסגר מעל טווח הבסיס עם ווליום חזק
-    # שלב 3: חיפוש בסיס - חלון שבו אין שפל חדש וטווח צר
+    # שלב 4: נר אחרון ירוק עם ווליום חזק (הסגירה מעל הבסיס נבדקת לכל אורך בסיס)
+    last = len(d) - 1
+    if not (c[last] > o[last] and v[last] > p["vol_mult"] * vol_avg):
+        return None
+
+    # שפל הירידה האמיתי: הנמוך ביותר ב-lookback הנרות שלפני הפריצה (כולל הבסיס)
+    w0 = max(0, last - p["lookback"])
+    tr = w0 + int(np.argmin(l[w0:last]))
+    trough = l[tr]
+    # השיא: הגבוה ביותר מאז הפעם האחרונה שהמחיר היה מתחת לשפל, עד peak_lookback נרות אחורה
+    p0 = max(0, tr - p["peak_lookback"])
+    below = np.where(l[p0:tr] < trough)[0]
+    s0 = p0 + int(below[-1]) + 1 if len(below) else p0
+    if s0 >= tr:
+        return None
+    pk = s0 + int(np.argmax(h[s0:tr]))
+    drop = (h[pk] - trough) / h[pk]
+    if drop < p["min_drop"] or tr - pk < p["min_decline"]:
+        return None
+
     best = None
     for blen in range(p["base_min"], p["base_max"] + 1):
-        b_end = len(d) - 1               # הנר האחרון = נר הפריצה
-        b_start = b_end - blen
-        if b_start < 8:
-            continue
-        base = d.iloc[b_start:b_end]
-        base_hi, base_lo = base["High"].max(), base["Low"].min()
-        last = d.iloc[-1]
-        breakout = (last["Close"] > last["Open"] and last["Close"] > base_hi * 0.998
-                    and last["Volume"] > p["vol_mult"] * vol_avg.iloc[-1])
+        b_start = last - blen
+        if b_start <= pk + 1:
+            break
+        base_hi, base_lo = h[b_start:last].max(), l[b_start:last].min()
+        breakout = c[last] > base_hi * 0.998
         tight = (base_hi - base_lo) / base_lo < 0.05
         # בבסיס אסור שפל חדש משמעותי אחרי 2 הנרות הראשונים
-        no_new_low = base["Low"].iloc[2:].min() >= base["Low"].iloc[:2].min() * 0.985
-        if not (breakout and tight and no_new_low):
+        bl = l[b_start:last]
+        no_new_low = blen <= 2 or bl[2:].min() >= bl[:2].min() * 0.985
+        # הבסיס חייב לשבת קרוב לשפל האמיתי, לא דגל אחרי ריבאונד
+        near_low = base_lo <= trough * (1 + p["near_low"])
+        if not (breakout and tight and no_new_low and near_low):
             continue
-        # שלב 1+2: לפני הבסיס - ירידה משיא
-        pre = d.iloc[:b_start]
-        peak_i = int(np.argmax(pre["High"].values))
-        drop = (pre["High"].iloc[peak_i] - base_lo) / pre["High"].iloc[peak_i]
-        if drop < p["min_drop"] or b_start - peak_i < 4:
-            continue
-        # חלוקת הירידה: האטה = החלק שבו גופי הנרות והווליום קטנים מתחילת הירידה
-        # תחילת ההאטה = אחרי הנר האדום הגדול האחרון של הירידה
-        dec_body = body.iloc[peak_i + 1:b_start]
-        big = np.where(dec_body.values > dec_body.median() * 1.2)[0]
-        half = peak_i + 1 + (int(big[-1]) + 1 if len(big) else len(dec_body) // 2)
-        half = min(max(half, peak_i + 2), b_start - 1)
-        early_body = body.iloc[peak_i + 1:half].mean()
-        late_body = body.iloc[half:b_start].mean()
-        early_vol = d["Volume"].iloc[peak_i + 1:half].mean()
-        base_vol = base["Volume"].mean()
-        slowing = late_body < early_body * 0.8
-        drying = base_vol < early_vol * 0.8
+        # שלב 2: ההאטה מתחילה כשהמחיר השלים SLOW_SPLIT מהירידה, ונמשכת עד הבסיס
+        dec_end = min(tr, b_start - 1)
+        level = h[pk] - SLOW_SPLIT * (h[pk] - trough)
+        hit = np.where(c[pk + 1:dec_end + 1] <= level)[0]
+        slow = min(pk + 1 + (int(hit[0]) + 1 if len(hit) else dec_end - pk), b_start)
+        n_early, n_late = slow - 1 - pk, b_start - slow
+        early_speed = (c[pk] - c[slow - 1]) / max(n_early, 1)       # ירידה לנר
+        late_speed = (c[slow - 1] - c[b_start - 1]) / n_late if n_late else np.inf
+        early_body = body[pk + 1:slow].mean()
+        late_body = body[slow:b_start].mean() if n_late else np.inf
+        slowing = bool(n_late >= 2 and late_speed < 0.5 * early_speed
+                       and late_body < early_body)
+        early_vol = v[pk + 1:slow].mean()
+        drying = bool(v[b_start:last].mean() < early_vol * 0.8)
         score = 25 * slowing + 25 * drying + 25 * tight + 25 * uptrend
-        cand = dict(peak=peak_i, slow=half, base=b_start, rise=b_end,
+        best = dict(peak=pk, slow=slow, base=b_start, rise=last, trough=tr,
                     drop=drop, base_hi=base_hi, base_lo=base_lo,
                     slowing=slowing, drying=drying, uptrend=uptrend,
                     score=score, offset=len(df) - len(d))
-        best = cand          # ממשיכים - הבסיס הארוך ביותר שעדיין עומד בתנאים מנצח
+        # ממשיכים - הבסיס הארוך ביותר שעדיין עומד בתנאים מנצח
     return best
 
 
@@ -121,13 +140,17 @@ def plot(df, res, title, path, bars=80):
                  ("slowdown", res["slow"], res["base"]),
                  ("base", res["base"], res["rise"]),
                  ("rise", res["rise"], res["rise"] + 1)]
-        for k, a, b in spans:
+        lab = matplotlib.transforms.blended_transform_factory(ax.transData, ax.transAxes)
+        for n, (k, a, b) in enumerate(spans):
             a, b = a + g, b + g
             for axx in (ax, axv):
                 axx.axvspan(a - 0.5, b - 0.5, color=PHASE_COLORS[k], alpha=0.45, lw=0)
-            if k != "rise":
-                ax.text((a + b - 1) / 2, d["High"].max() * 1.005,
-                        PHASE_NAMES[k], ha="center", va="bottom", fontsize=9)
+            if k != "rise" and b > a:
+                ax.text((a + b - 1) / 2, 0.97 - 0.05 * (n % 2), PHASE_NAMES[k],
+                        transform=lab, ha="center", va="top", fontsize=9)
+        if "trough" in res:
+            ax.plot(res["trough"] + g, d["Low"].iloc[res["trough"] + g] if 0 <= res["trough"] + g < len(d)
+                    else res["base_lo"], marker="^", color="#A32D2D", ms=7, ls="")
         ax.axhline(res["base_hi"], color="#185FA5", ls="--", lw=1, label="Entry (base high)")
         ax.axhline(res["base_lo"], color="#A32D2D", ls="--", lw=1, label="Stop (base low)")
         ax.annotate("BUY", (res["rise"] + g, d["Low"].iloc[res["rise"] + g]),

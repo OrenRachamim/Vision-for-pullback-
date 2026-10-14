@@ -1,6 +1,8 @@
 # Vision for pullback
 
-* `pullback_scanner.py` - הסורק המקורי (ללא שינוי): זיהוי ירידה > האטה > בסיס > פריצה, בגרף יומי ושבועי.
+* `pullback_scanner.py` - הסורק המתוקן: זיהוי ירידה > האטה > בסיס > פריצה, בגרף יומי ושבועי
+  (שיא אמיתי, ירידה עד השפל האמיתי, הגדרה חדשה לשלב ההאטה. פירוט ב-`ANALYSIS.md` סעיף 6).
+* `pullback_scanner_v1.py` - הסורק המקורי, ללא שינוי, להשוואה.
 * `backtest.py` - מנוע walk-forward שמריץ את הסורק על היסטוריה אמיתית, יום אחרי יום בלי הצצה לעתיד,
   ומודד מה קרה אחרי כל איתות מול קבוצות השוואה.
 * `ANALYSIS.md` - ניתוח הקוד ותוצאות הריצה. **מומלץ להתחיל כאן.**
@@ -15,12 +17,13 @@ python backtest.py                            # 30 מניות ברירת מחד�
 python backtest.py AAPL NVDA AMD --start 2019-01-01 --charts 30
 python backtest.py --target-r 3 --max-hold 40 # כללי יציאה אחרים
 python backtest.py --csv-dir my_data SPY      # נתונים משלך: my_data/SPY.csv עם Date,Open,High,Low,Close,Volume
+python backtest.py --scanner pullback_scanner_v1 --out results_v1   # הגרסה המקורית
 python -m pytest -q tests                     # בדיקות תקינות למנוע
 ```
 
 נתונים מורדים פעם אחת ל-`data/` (מטמון). `--refresh` מוריד מחדש.
 
-## תוצרים (`results/`)
+## תוצרים (`results/` לגרסה המתוקנת, `results_v1/` למקורית)
 
 | קובץ | תוכן |
 |---|---|
@@ -39,6 +42,7 @@ python -m pytest -q tests                     # בדיקות תקינות למנ
 | `--cooldown` | 5 | איתות חוזר על אותה מניה תוך N נרות נספר פעם אחת |
 | `--charts` | 12 | כמה גרפי איתות לצייר (מדגם אקראי קבוע) |
 | `--no-prefilter` | כבוי | ריצה איטית בלי סינון מוקדם, לאימות |
+| `--scanner` | pullback_scanner | איזו גרסה לבדוק |
 | `--jobs` | מספר ליבות | עיבוד מקבילי |
 
 הערות: מחירי yfinance מותאמים לדיבידנדים ולפיצולים; רשימת מניות של היום יוצרת הטיית שרידות (survivorship bias).
