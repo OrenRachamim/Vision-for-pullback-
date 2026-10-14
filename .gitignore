@@ -1,0 +1,7 @@
+data/
+__pycache__/
+*.pyc
+.pytest_cache/
+*_daily.png
+*_weekly.png
+results/run_log.txt
