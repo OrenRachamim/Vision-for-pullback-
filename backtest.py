@@ -505,7 +505,8 @@ def signal_chart(df, hit, kind, ticker, path, after=20, marks=(), note=""):
         later = later[later.index > win_w.index[-1]]     # בלי שארית השבוע של יום האיתות
         ext = pd.concat([win_w, later.iloc[:after // 4 or 1]])
         bars = max(60, before) + (len(ext) - len(win_w))
-    ps.plot(ext, res, f"{ticker} {kind} signal {df.index[t].date()}{note} (+{after} bars after)",
+    unit = "1 candle = 1 day" if kind == "daily" else "1 candle = 1 week"
+    ps.plot(ext, res, f"{ticker} {kind.upper()} [{unit}] signal {df.index[t].date()}{note} (+{after} bars after)",
             path, bars=min(bars, len(ext)), marks=marks)
 
 

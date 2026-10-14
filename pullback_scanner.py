@@ -21,7 +21,7 @@ from matplotlib.patches import Rectangle
 # min_decline   - מינימום נרות בין השיא לשפל (מסנן "ירידה" של גאפ אחד)
 # near_low      - הבסיס חייב להיווצר עד X% מעל השפל האמיתי של הירידה
 DAILY = dict(min_drop=0.05, lookback=40, base_min=3, base_max=10, vol_mult=1.5,
-             peak_lookback=120, min_decline=5, near_low=0.03)
+             peak_lookback=40, min_decline=5, near_low=0.03)   # יומי = פולבק קצר (עד ~2 חודשים)
 WEEKLY = dict(min_drop=0.10, lookback=26, base_min=2, base_max=6, vol_mult=1.3,
               peak_lookback=52, min_decline=3, near_low=0.05)
 SLOW_SPLIT = 0.75   # שלב ההאטה מתחיל אחרי שהמחיר השלים 75% מהירידה (בסגירה)
