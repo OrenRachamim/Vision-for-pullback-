@@ -125,3 +125,13 @@ def test_combo_weekly_arms_then_daily_triggers():
     # one buy per weekly setup: repeated weekly days right after a buy do not re-arm
     out = bt.combo_signals(df, [h(10, w=W), h(11, d=D, w=W), h(13, d=D, w=W)], 15)
     assert [c["t"] for c in out] == [11]
+
+
+def test_combo_require_uptrend_waits_for_uptrend_daily():
+    df = _bars([(100, 101, 99, 100)] * 60)
+    W = dict(base_lo=95.0, score=50)
+    down, up = dict(base_lo=98.0, score=50, uptrend=False), dict(base_lo=98.0, score=50, uptrend=True)
+    h = lambda t, d=None, w=None: dict(t=t, t0=0, daily=d, weekly=w)
+    hits = [h(10, w=W), h(12, d=down), h(16, d=up)]
+    assert [c["t"] for c in bt.combo_signals(df, hits, 15)] == [12]
+    assert [c["t"] for c in bt.combo_signals(df, hits, 15, require_uptrend=True)] == [16]

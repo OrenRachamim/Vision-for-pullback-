@@ -140,10 +140,11 @@ def scan_history(df, start=None, end=None, prefilter=True, daily=True):
     return out
 
 
-def combo_signals(df, hits, arm_days=15):
+def combo_signals(df, hits, arm_days=15, require_uptrend=False):
     """איתות משולב: איתות שבועי "דורך" את המניה, ורק אחריו (באותו יום או עד arm_days ימי מסחר)
     איתות יומי מפעיל קנייה. סגירה מתחת ל-base_lo השבועי מבטלת את הדריכה.
-    כל הגדרה שבועית נותנת לכל היותר קנייה אחת (אחרי קנייה אין דריכה מחדש למשך arm_days)."""
+    כל הגדרה שבועית נותנת לכל היותר קנייה אחת (אחרי קנייה אין דריכה מחדש למשך arm_days).
+    require_uptrend: האיתות היומי מפעיל קנייה רק אם המחיר מעל SMA200; אחרת הדריכה ממשיכה לחכות."""
     if not hits:
         return []
     close = df["Close"].values
@@ -157,7 +158,7 @@ def combo_signals(df, hits, arm_days=15):
             continue
         if h["weekly"] and armed is None and t > blocked_until:
             armed = dict(hit=h, until=t + arm_days, lo=h["weekly"]["base_lo"])
-        if armed and h["daily"]:
+        if armed and h["daily"] and (not require_uptrend or h["daily"]["uptrend"]):
             out.append(dict(t=t, daily_hit=h, weekly_hit=armed["hit"]))
             armed, blocked_until = None, t + arm_days
     return out
@@ -253,7 +254,7 @@ def run_ticker(ticker, args):
             if hit[kind] is not None:
                 rows.append(make_row(df, fwd, ticker, kind, hit, hit[kind], args))
     if args.combo:
-        for c in combo_signals(df, hits, args.arm_days):
+        for c in combo_signals(df, hits, args.arm_days, args.require_uptrend):
             wk = c["weekly_hit"]
             row = make_row(df, fwd, ticker, "combo", c["daily_hit"], c["daily_hit"]["daily"], args)
             row.update(weekly_date=df.index[wk["t"]].date(), weekly_tpos=wk["t"],
@@ -330,7 +331,11 @@ def random_control(hits_by, sig, args, stride=3, seed=0):
         lo = bt_lo(df, args.start)
         hi = df.index.searchsorted(pd.Timestamp(args.end), side="right") if args.end else len(df)
         o = df["Open"].values
+        # במצב require_uptrend משווים רק לימים אקראיים שגם בהם המחיר מעל SMA200 - השוואה הוגנת
+        up = (df["Close"] > df["Close"].rolling(200).mean()).values if args.require_uptrend else None
         for t in range(lo, hi - 1, stride):
+            if up is not None and not up[t]:
+                continue
             r = simulate_trade(df, t, o[t + 1] * (1 - rng.choice(risks)), args.target_r, args.max_hold)
             if r:   # רק העמודות ש-trade_stats צריך - ביוניברס גדול יש מיליון עסקאות
                 rows.append((r["R"], r["exit_reason"], r.get("risk_pct", np.nan)))
@@ -425,6 +430,8 @@ def build_report(sig, base, args, out, control=None):
                 L.append(f"* {k} vs CONTROL: avg_R diff = {x.mean() - cr.mean():+.3f}R,"
                          f" t = {t:.2f}, p = {p:.3f}")
         L.append("")
+    if args.require_uptrend:
+        L += ["> require-uptrend: buy only when price > SMA200; CONTROL also samples only days with price > SMA200.", ""]
 
     # 3. does the score / its components carry information?
     d = groups[focus]
@@ -544,6 +551,8 @@ def main(argv=None):
                     help="weekly signal arms the stock, a later daily signal triggers the buy")
     ap.add_argument("--arm-days", type=int, default=15,
                     help="combo: trading days after the weekly signal in which a daily signal counts")
+    ap.add_argument("--require-uptrend", action="store_true",
+                    help="combo: the daily trigger must have price above SMA200 (control matches)")
     ap.add_argument("--weekly-only", action="store_true",
                     help="skip daily detection (much faster for large universes)")
     ap.add_argument("--start", default="2016-01-01")
