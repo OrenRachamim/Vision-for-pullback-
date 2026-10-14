@@ -453,15 +453,16 @@ def signal_chart(df, hit, kind, ticker, path, after=20):
     """גרף הסורק עצמו (ps.plot) ביום האיתות + `after` נרות של מה שקרה אחר כך."""
     t, t0 = hit["t"], hit["t0"]
     res = hit[kind]
+    before = res["rise"] - res["peak"] + 12           # תמיד להראות את השיא ועוד קצת לפניו
     if kind == "daily":
         ext = df.iloc[t0:t + 1 + after]                    # האינדקסים של res נשארים תקפים
-        bars = 80 + min(after, len(df) - 1 - t)
+        bars = max(80, before) + min(after, len(df) - 1 - t)
     else:
         win_w = ps.to_weekly(df.iloc[t0:t + 1])
         later = ps.to_weekly(df.iloc[t + 1:t + 1 + after * 5])
         later = later[later.index > win_w.index[-1]]     # בלי שארית השבוע של יום האיתות
         ext = pd.concat([win_w, later.iloc[:after // 4 or 1]])
-        bars = 60 + (len(ext) - len(win_w))
+        bars = max(60, before) + (len(ext) - len(win_w))
     ps.plot(ext, res, f"{ticker} {kind} signal {df.index[t].date()} (+{after} bars after)",
             path, bars=min(bars, len(ext)))
 

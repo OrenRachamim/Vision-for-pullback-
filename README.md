@@ -5,6 +5,7 @@
 * `pullback_scanner_v1.py` - הסורק המקורי, ללא שינוי, להשוואה.
 * `backtest.py` - מנוע walk-forward שמריץ את הסורק על היסטוריה אמיתית, יום אחרי יום בלי הצצה לעתיד,
   ומודד מה קרה אחרי כל איתות מול קבוצות השוואה.
+* `find_buy_signals.py` - מוצא ימים שבהם גם היומי וגם השבועי מתקיימים (BUY SIGNAL) ומצייר גרף יומי + שבועי לכל אחד.
 * `ANALYSIS.md` - ניתוח הקוד ותוצאות הריצה. **מומלץ להתחיל כאן.**
 
 ## התקנה והרצה (Windows / Mac / Linux)
@@ -19,6 +20,7 @@ python backtest.py --target-r 3 --max-hold 40 # כללי יציאה אחרים
 python backtest.py --csv-dir my_data SPY      # נתונים משלך: my_data/SPY.csv עם Date,Open,High,Low,Close,Volume
 python backtest.py --scanner pullback_scanner_v1 --out results_v1   # הגרסה המקורית
 python backtest.py --universe universes/sp500.txt universes/sp400.txt --weekly-only   # ~900 מניות, שבועי בלבד
+python find_buy_signals.py --universe universes/sp500.txt --max 10   # ימים עם איתות יומי + שבועי, עם גרפים
 python -m pytest -q tests                     # בדיקות תקינות למנוע
 ```
 
