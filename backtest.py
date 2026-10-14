@@ -291,9 +291,9 @@ def random_control(hits_by, sig, args, stride=3, seed=0):
         o = df["Open"].values
         for t in range(lo, hi - 1, stride):
             r = simulate_trade(df, t, o[t + 1] * (1 - rng.choice(risks)), args.target_r, args.max_hold)
-            if r:
-                rows.append(r)
-    return pd.DataFrame(rows)
+            if r:   # רק העמודות ש-trade_stats צריך - ביוניברס גדול יש מיליון עסקאות
+                rows.append((r["R"], r["exit_reason"], r.get("risk_pct", np.nan)))
+    return pd.DataFrame(rows, columns=["R", "exit_reason", "risk_pct"])
 
 
 def bt_lo(df, start):

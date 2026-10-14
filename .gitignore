@@ -7,3 +7,4 @@ __pycache__/
 results/run_log.txt
 results*/run_log.txt
 *.log
+time*.log
