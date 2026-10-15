@@ -216,7 +216,8 @@ def simulate(f, sig_t, limit, stop, target, hold, exit_sma5):
                 reason, xi, xpx = "stop", j, st; break
             if tg == tg and j > e and o[j] >= tg:
                 reason, xi, xpx = "target", j, o[j]; break
-            if tg == tg and h[j] >= tg:
+            # ביום מילוי לימיט לא יודעים אם השיא היה לפני השפל (נר יומי) -> אין יציאה ביעד באותו יום
+            if tg == tg and h[j] >= tg and not (j == e and lim == lim):
                 reason, xi, xpx = "target", j, tg; break
             if exit_sma5 and c[j] > sma5[j] and j + 1 < n:
                 reason, xi, xpx = "sma5", j + 1, o[j + 1]; break
