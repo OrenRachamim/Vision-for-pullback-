@@ -139,7 +139,7 @@ def find_breakouts(df, start=None, end=None, min_touches=MIN_TOUCHES, margin_atr
     return out
 
 
-def plot_levels(df, t, path, title="", lv=None, bars=250, after=0, breakout=None):
+def plot_levels(df, t, path, title="", lv=None, bars=250, after=0, breakout=None, extra_lines=()):
     """גרף נרות עם רמות התמיכה/התנגדות כפי שהיו ידועות ביום t. עובי הקו = מספר הנגיעות."""
     import matplotlib
     matplotlib.use("Agg")
@@ -170,6 +170,9 @@ def plot_levels(df, t, path, title="", lv=None, bars=250, after=0, breakout=None
                 ax.plot(i - a, p, marker="v" if k == "H" else "^", color=col, ms=5, ls="")
     if after:
         ax.axvline(t - a, color="#5F5E5A", ls=":", lw=1)
+    for price, text, col in extra_lines:                    # קווים נוספים (כניסה, יעדים) מיום t והלאה
+        ax.hlines(price, t - a, len(d) - 1, color=col, ls="--", lw=1.1)
+        ax.text(len(d) - 0.5, price, f" {text}", color=col, fontsize=8, va="center", fontweight="bold")
     if breakout:
         ax.annotate("BREAKOUT", (t - a, df["Close"].values[t]), xytext=(0, 30), textcoords="offset points",
                     ha="center", color="#3B6D11", fontweight="bold",
