@@ -31,7 +31,7 @@ def run_ticker(tk, args):
         return tk, [], []
     lv = sr.Levels(df)
     atr = lv.atr
-    bos = sr.find_breakouts(df, args.start, args.end, lv=lv, top_only=args.top_only)
+    bos = sr.find_breakouts(df, args.start, args.end, lv=lv, top_only=args.top_only, margin_atr=args.margin_atr)
     vol = ps.clean_event_volume(df)["Volume"]
     vr = (vol / vol.rolling(20).mean().shift(1)).values
     c = df["Close"].values
@@ -82,6 +82,8 @@ def main(argv=None):
     ap.add_argument("--cache-dir", default="data")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
     ap.add_argument("--out", default="results_sr")
+    ap.add_argument("--margin-atr", type=float, default=sr.MARGIN_ATR,
+                    help="breakout = first close above zone top + K*ATR (default 0.1)")
     ap.add_argument("--top-only", choices=["year", "ath"], default=None,
                     help="only breakouts of the zone holding the 52-week high (year) or the all-time high in the data (ath)")
     args = ap.parse_args(argv)
@@ -115,6 +117,7 @@ def main(argv=None):
                 f"{g.R.mean() - cR.mean():+.3f} | {g.R.mean() - cT.mean():+.3f} |")
 
     L = [f"# Resistance breakouts - {len(tickers)} stocks, {args.start} -> {args.end or 'today'}"
+         + f" - breakout = close > zone top + {args.margin_atr}xATR"
          + (f" - only the zone holding the {'52-week' if args.top_only == 'year' else 'all-time (since 2010)'} high"
             if args.top_only else ""), "",
          f"* exit: {ex_txt}", f"* {len(sig):,} breakouts ({len(sig) / len(tickers) / years:.1f} per stock per year), "

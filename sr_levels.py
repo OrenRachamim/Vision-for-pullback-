@@ -86,11 +86,12 @@ class Levels:
 
 
 def find_breakouts(df, start=None, end=None, min_touches=MIN_TOUCHES, margin_atr=MARGIN_ATR, lv=None,
-                   below_days=BELOW_DAYS, top_only=None):
+                   below_days=BELOW_DAYS, top_only=None, confirm_days=10):
     """פריצה ביום t מעל אזור התנגדות:
       * לאזור לפחות min_touches נגיעות, והנגיעה האחרונה בו היא שיא (נגיעה מלמטה);
       * המחיר נסגר מתחת לראש האזור below_days ימים ברציפות לפני t;
-      * הסגירה ב-t מעל ראש האזור + margin_atr*ATR;
+      * הסגירה ב-t מעל ראש האזור + margin_atr*ATR, והיא הסגירה הראשונה שעוברת את הסף; החצייה של ראש האזור
+        קרתה עד confirm_days ימים לפני כן, בלי חזרה מתחתיו בדרך (ב-margin קטן זה תמיד אותו יום);
       * כל אזור נותן איתות אחד - שוב רק אם נוצר בו שיא מפנה חדש אחרי הפריצה הקודמת.
     top_only: "year" - רק פריצה של האזור שמכיל את השיא של השנה האחרונה (שיא 52 שבועות);
               "ath"  - רק פריצה של האזור שמכיל את השיא של כל הנתונים עד אתמול (שיא כל הזמנים בנתונים).
@@ -99,7 +100,7 @@ def find_breakouts(df, start=None, end=None, min_touches=MIN_TOUCHES, margin_atr
     c = df["Close"].values
     lo = max(bt.DAILY_WARMUP, df.index.searchsorted(pd.Timestamp(start)) if start else 0)
     hi = df.index.searchsorted(pd.Timestamp(end), side="right") if end else len(df)
-    lo = max(lo, below_days + 1)
+    lo = max(lo, below_days + confirm_days + 1)
     h = df["High"].values
     ath = np.maximum.accumulate(h)                          # שיא מצטבר עד כל יום
     broken = {}                                             # id אזור -> יום הפריצה האחרונה
@@ -111,7 +112,15 @@ def find_breakouts(df, start=None, end=None, min_touches=MIN_TOUCHES, margin_atr
         for L in levels:
             if L["touches"] < min_touches or L["last_kind"] != "H":
                 continue
-            if not (c[t] > L["top"] + thr and (c[t - below_days:t] < L["top"]).all()):
+            top = L["top"]
+            if not (c[t] > top + thr and c[t - 1] <= top + thr):     # היום הראשון שעובר את הסף
+                continue
+            # s = היום שבו המחיר חצה לראשונה את ראש האזור (עד confirm_days לפני t), בלי לחזור מתחתיו מאז,
+            # ולפניו below_days סגירות מתחת לראש האזור
+            s0 = t
+            while s0 > t - confirm_days and c[s0 - 1] > top:
+                s0 -= 1
+            if c[s0 - 1] > top or s0 - below_days < 0 or not (c[s0 - below_days:s0] < top).all():
                 continue
             if L["id"] in broken and L["last_high"] <= broken[L["id"]]:
                 continue
