@@ -175,7 +175,8 @@ def atr14(df):
     return pd.Series(tr).rolling(14, min_periods=1).mean().values
 
 
-def simulate_trade(df, t, stop, target_r=2.0, max_hold=20, trail_atr=None, atr=None):
+def simulate_trade(df, t, stop, target_r=2.0, max_hold=20, trail_atr=None, atr=None,
+                   return_path=False):
     """כניסה בפתיחת t+1. אם סטופ ויעד באותו נר - מניחים שהסטופ קרה קודם (שמרני).
     trail_atr=k: בלי יעד קבוע; סטופ נגרר = הגבוה ביותר מאז הכניסה פחות k*ATR, מחושב עד אתמול
     בלבד, ולעולם לא יורד. הסטופ ההתחלתי (base_lo) נשאר רצפה."""
@@ -194,10 +195,12 @@ def simulate_trade(df, t, stop, target_r=2.0, max_hold=20, trail_atr=None, atr=N
     last = min(t + max_hold, len(df) - 1)
     reason, px, j = "time", c[last], last
     hh = -np.inf
+    path = []                                              # הסטופ שהיה בתוקף בכל יום (לגרף)
     for j in range(t + 1, last + 1):
         if trail_atr and j > t + 1:
             hh = max(hh, h[j - 1])
             stop = max(stop, hh - trail_atr * atr[j - 1])
+        path.append(stop)
         kind = "trail" if stop > init_stop else "stop"
         if j > t + 1 and o[j] <= stop:
             reason, px = kind + "_gap", o[j]; break
@@ -212,9 +215,12 @@ def simulate_trade(df, t, stop, target_r=2.0, max_hold=20, trail_atr=None, atr=N
         if last < t + max_hold:
             reason = "open"                                # עדיין לא הסתיימה
     seg = slice(t + 1, j + 1)
-    return dict(entry=entry, exit=px, R=(px - entry) / risk, ret=px / entry - 1,
-                exit_reason=reason, bars=j - t, risk_pct=risk / entry,
-                mfe=h[seg].max() / entry - 1, mae=l[seg].min() / entry - 1)
+    out = dict(entry=entry, exit=px, R=(px - entry) / risk, ret=px / entry - 1,
+               exit_reason=reason, bars=j - t, risk_pct=risk / entry,
+               mfe=h[seg].max() / entry - 1, mae=l[seg].min() / entry - 1)
+    if return_path:
+        out.update(stop_path=path[:j - t], exit_pos=j, init_stop=init_stop)
+    return out
 
 
 def forward_returns(df):
@@ -567,6 +573,39 @@ def stacked_chart(df, daily_hit, weekly_hit, ticker, path, after=20):
     plt.close(fig)
     for p in tmp:
         os.remove(p)
+
+
+def trade_chart(df, t, stop, ticker, path, trail_atr=3.0, max_hold=60, before=40, title=""):
+    """גרף יומי של עסקה: כניסה, סטופ התחלתי, הסטופ הנגרר יום-יום, ויציאה."""
+    import matplotlib.pyplot as plt
+    tr = simulate_trade(df, t, stop, max_hold=max_hold, trail_atr=trail_atr, return_path=True)
+    a, b = max(0, t - before), min(len(df), tr["exit_pos"] + 8)
+    d = df.iloc[a:b]
+    fig, (ax, axv) = plt.subplots(2, 1, figsize=(12, 6.5), sharex=True,
+                                  gridspec_kw={"height_ratios": [3, 1]})
+    for i, (o, h, l, c) in enumerate(d[["Open", "High", "Low", "Close"]].values):
+        col = "#3B6D11" if c >= o else "#A32D2D"
+        ax.vlines(i, l, h, color=col, lw=1)
+        ax.add_patch(plt.Rectangle((i - 0.3, min(o, c)), 0.6, max(abs(c - o), 1e-6), color=col))
+    axv.bar(range(len(d)), d["Volume"], color=np.where(d["Close"] >= d["Open"], "#97C459", "#F09595"))
+    e0 = t + 1 - a                                          # נר הכניסה
+    xs = np.arange(e0, e0 + len(tr["stop_path"]))
+    ax.step(xs, tr["stop_path"], where="mid", color="#A32D2D", lw=1.8, label=f"trailing stop ({trail_atr}xATR)")
+    ax.hlines(tr["init_stop"], e0 - 3, e0 + 3, color="#A32D2D", ls="--", lw=1, label="initial stop (base low)")
+    ax.axvspan(e0 - 0.5, tr["exit_pos"] - a + 0.5, color="#B5D4F4", alpha=0.25, lw=0)
+    ax.plot(e0, tr["entry"], marker="^", color="#185FA5", ms=11, ls="", label=f"entry {tr['entry']:.2f}")
+    col = "#3B6D11" if tr["R"] > 0 else "#A32D2D"
+    ax.plot(tr["exit_pos"] - a, tr["exit"], marker="v", color=col, ms=11, ls="",
+            label=f"exit {tr['exit']:.2f} ({tr['exit_reason']}, {tr['bars']} days)")
+    ax.set_title(f"{ticker}  {title}  |  result {tr['R']:+.2f}R  ({tr['ret']:+.1%})")
+    ax.legend(loc="upper left", fontsize=8)
+    step = max(1, len(d) // 8)
+    axv.set_xticks(range(0, len(d), step))
+    axv.set_xticklabels([x.strftime("%Y-%m-%d") for x in d.index[::step]], fontsize=8)
+    fig.tight_layout()
+    fig.savefig(path, dpi=105)
+    plt.close(fig)
+    return tr
 
 
 # ---------------------------------------------------------------- main
