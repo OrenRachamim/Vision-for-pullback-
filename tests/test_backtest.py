@@ -189,3 +189,17 @@ def test_index_combo_window_and_invalidation():
     bad = idf.copy()
     bad.iloc[18, bad.columns.get_loc("Close")] = 90.0
     assert bt.index_combo_signals(df, [sh(20)], bad, [ih(17)], 5) == []
+
+
+def test_sr_levels_no_lookahead():
+    import sr_levels as sr
+    df = random_market(3)
+    full = sr.Levels(df)
+    for t in (400, 550, 700):
+        cut = sr.Levels(df.iloc[:t + 1])
+        a = [(round(L["price"], 6), L["touches"]) for L in full.asof(t)]
+        b = [(round(L["price"], 6), L["touches"]) for L in cut.asof(t)]
+        assert a == b and a
+    bo_full = [b["t"] for b in sr.find_breakouts(df, start=df.index[300])]
+    bo_cut = [b["t"] for b in sr.find_breakouts(df.iloc[:601], start=df.index[300])]
+    assert [t for t in bo_full if t <= 600] == bo_cut and bo_cut
