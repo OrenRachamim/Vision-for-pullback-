@@ -22,7 +22,8 @@ import pandas as pd
 import backtest as bt
 
 PIVOT_N = 5          # נרות מכל צד לנקודת מפנה
-TOL_ATR = 0.5        # מרחק מקסימלי (ביחידות ATR) בין נקודות באותה רמה
+TOL_ATR = 1.0        # מרחק מקסימלי (ביחידות ATR) בין נקודות באותו אזור (רמות קרובות מתמזגות)
+BELOW_DAYS = 10      # התנגדות אמיתית: המחיר נסגר מתחת לראש האזור לפחות כך הרבה ימים ברציפות לפני הפריצה
 LOOKBACK = 250       # כמה ימים אחורה מחפשים נקודות מפנה (~שנה)
 MIN_TOUCHES = 2      # מינימום נגיעות להתנגדות "אמיתית"
 MARGIN_ATR = 0.1     # כמה מעל הרמה הסגירה צריכה להיות
@@ -42,16 +43,23 @@ def pivots(df, n=PIVOT_N):
 
 
 def cluster(points, tol):
-    """קיבוץ נקודות לפי מחיר: נקודה מצטרפת לקבוצה אם היא עד tol מהממוצע שלה."""
+    """קיבוץ נקודות לפי מחיר: נקודה מצטרפת לאזור אם רוחב האזור כולו (מהנקודה הנמוכה) נשאר עד tol.
+    (בלי זה האזור "זוחל" - כל נקודה קרובה לממוצע אבל האזור מתרחב בלי גבול.)"""
     levels = []
     for i, p, kind in sorted(points, key=lambda x: x[1]):
-        if levels and abs(p - levels[-1]["price"]) <= tol:
+        if levels and p - min(q[1] for q in levels[-1]["pts"]) <= tol:
             lv = levels[-1]
             lv["pts"].append((i, p, kind))
             lv["price"] = float(np.mean([q[1] for q in lv["pts"]]))
         else:
             levels.append(dict(price=p, pts=[(i, p, kind)]))
     for lv in levels:
+        lv["top"] = max(q[1] for q in lv["pts"])            # האזור: מהנקודה הנמוכה לגבוהה
+        lv["bottom"] = min(q[1] for q in lv["pts"])
+        lv["id"] = min(q[0] for q in lv["pts"])            # זהות יציבה: נקודת המפנה הראשונה
+        last = max(lv["pts"], key=lambda q: q[0])
+        lv["last_kind"] = last[2]
+        lv["last_high"] = max([q[0] for q in lv["pts"] if q[2] == "H"], default=-1)
         lv["touches"] = len(lv["pts"])
         lv["first"] = min(q[0] for q in lv["pts"])
         lv["last"] = max(q[0] for q in lv["pts"])
@@ -77,22 +85,38 @@ class Levels:
         return cluster(self.pts[a:b], self.tol_atr * self.atr[t])
 
 
-def find_breakouts(df, start=None, end=None, min_touches=MIN_TOUCHES, margin_atr=MARGIN_ATR, lv=None):
-    """פריצות: סגירה ביום t מעל רמת התנגדות (נגיעות >= min_touches) כשהסגירה ב-t-1 הייתה מתחת לה."""
+def find_breakouts(df, start=None, end=None, min_touches=MIN_TOUCHES, margin_atr=MARGIN_ATR, lv=None,
+                   below_days=BELOW_DAYS):
+    """פריצה ביום t מעל אזור התנגדות:
+      * לאזור לפחות min_touches נגיעות, והנגיעה האחרונה בו היא שיא (נגיעה מלמטה);
+      * המחיר נסגר מתחת לראש האזור below_days ימים ברציפות לפני t;
+      * הסגירה ב-t מעל ראש האזור + margin_atr*ATR;
+      * כל אזור נותן איתות אחד - שוב רק אם נוצר בו שיא מפנה חדש אחרי הפריצה הקודמת."""
     lv = lv or Levels(df)
     c = df["Close"].values
     lo = max(bt.DAILY_WARMUP, df.index.searchsorted(pd.Timestamp(start)) if start else 0)
     hi = df.index.searchsorted(pd.Timestamp(end), side="right") if end else len(df)
+    lo = max(lo, below_days + 1)
+    broken = {}                                             # id אזור -> יום הפריצה האחרונה
     out = []
-    for t in range(max(lo, 1), hi):
+    for t in range(lo, hi):
         levels = lv.asof(t)
         thr = margin_atr * lv.atr[t]
-        broken = [L for L in levels if L["touches"] >= min_touches
-                  and c[t - 1] <= L["price"] and c[t] > L["price"] + thr]
-        if broken:
-            L = max(broken, key=lambda x: x["price"])          # הרמה הגבוהה ביותר שנפרצה היום
-            above = [x for x in levels if x["price"] > c[t]]
-            nxt = min(above, key=lambda x: x["price"]) if above else None
+        cands = []
+        for L in levels:
+            if L["touches"] < min_touches or L["last_kind"] != "H":
+                continue
+            if not (c[t] > L["top"] + thr and (c[t - below_days:t] < L["top"]).all()):
+                continue
+            if L["id"] in broken and L["last_high"] <= broken[L["id"]]:
+                continue
+            cands.append(L)
+        if cands:
+            L = max(cands, key=lambda x: x["top"])
+            for x in cands:
+                broken[x["id"]] = t
+            above = [x for x in levels if x["bottom"] > c[t]]
+            nxt = min(above, key=lambda x: x["bottom"]) if above else None
             out.append(dict(t=t, level=L, next_resistance=nxt, levels=levels))
     return out
 
@@ -117,10 +141,11 @@ def plot_levels(df, t, path, title="", lv=None, bars=250, after=0, breakout=None
     for L in levels:
         if L["touches"] < MIN_TOUCHES:
             continue
-        col = "#A32D2D" if L["price"] > close_t else "#185FA5"
+        col = "#A32D2D" if L["top"] > close_t else "#185FA5"
         x0 = max(L["first"] - a, 0)
-        ax.hlines(L["price"], x0, len(d) - 1, color=col, lw=0.6 + 0.7 * min(L["touches"], 6), alpha=0.75)
-        ax.text(len(d) - 0.5, L["price"], f" {L['price']:.2f} ({L['touches']}x)", color=col,
+        ax.fill_between([x0, len(d) - 1], L["bottom"], L["top"], color=col, alpha=0.10 + 0.03 * min(L["touches"], 6), lw=0)
+        ax.hlines(L["top"], x0, len(d) - 1, color=col, lw=0.6 + 0.4 * min(L["touches"], 6), alpha=0.8)
+        ax.text(len(d) - 0.5, L["top"], f" {L['top']:.2f} ({L['touches']}x)", color=col,
                 fontsize=8, va="center")
         for i, p, k in L["pts"]:
             if i >= a:
@@ -131,8 +156,8 @@ def plot_levels(df, t, path, title="", lv=None, bars=250, after=0, breakout=None
         ax.annotate("BREAKOUT", (t - a, df["Close"].values[t]), xytext=(0, 30), textcoords="offset points",
                     ha="center", color="#3B6D11", fontweight="bold",
                     arrowprops=dict(arrowstyle="->", color="#3B6D11"))
-    ax.set_title(title or f"Support (blue) / resistance (red) as known on {df.index[t].date()}  -  "
-                          f"line width = number of touches")
+    ax.set_title(title or f"Support (blue) / resistance (red) zones as known on {df.index[t].date()}  -  "
+                          f"line = zone top, width = number of touches")
     ax.set_xlim(-1, len(d) + 8)
     step = max(1, len(d) // 10)
     axv.set_xticks(range(0, len(d), step))
