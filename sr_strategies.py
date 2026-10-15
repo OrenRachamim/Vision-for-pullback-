@@ -186,7 +186,7 @@ STRATS = dict(support_bounce=s_support_bounce, spring=s_spring, break_retest=s_b
 
 
 # ---------------------------------------------------------------- עסקאות
-def simulate(f, sig_t, limit, stop, target, hold, exit_sma5):
+def simulate(f, sig_t, limit, stop, target, hold, exit_sma5, pen=0.0):
     """עסקה לכל איתות. מחזיר רשימת tuples: (t, entry_i, exit_i, entry_px, exit_px, reason)."""
     o, h, l, c, sma5 = f["o"], f["h"], f["l"], f["c"], f["sma5"]
     n = len(c)
@@ -199,7 +199,7 @@ def simulate(f, sig_t, limit, stop, target, hold, exit_sma5):
         if lim == lim:                                      # לימיט
             if o[e] <= lim:
                 px = o[e]
-            elif l[e] <= lim:
+            elif l[e] <= lim * (1 - pen):                  # pen: המחיר צריך לרדת מתחת ללימיט כדי להבטיח מילוי
                 px = lim
             else:
                 continue
@@ -257,18 +257,21 @@ def run_ticker(args):
         return []
     bc = lambda x: (np.broadcast_to(x, m.shape) if np.ndim(x) == 0 else x)[t]
     limit, stop, target, score = bc(limit), bc(stop), bc(target), bc(score)
-    tr = simulate(f, t, limit, stop, target, p.get("hold", 5), p.get("exit_sma5", False))
+    tr = simulate(f, t, limit, stop, target, p.get("hold", 5), p.get("exit_sma5", False),
+                  p.get("pen", 0.0))
     idx = F.index
     sc = dict(zip(t, score))
     return [(tk, idx[a], idx[e], idx[x], pe, px, r, float(sc[a])) for a, e, x, pe, px, r in tr]
 
 
-def trades(pool, tickers, name, p, start="2016-01-01"):
+def trades(pool, tickers, name, p, start="2016-01-01", cost=None):
     rows = []
     for r in pool.map(run_ticker, [(tk, name, p, start) for tk in tickers], chunksize=16):
         rows += r
     df = pd.DataFrame(rows, columns=["ticker", "sig", "entry", "exit", "pe", "px", "reason", "score"])
-    df["ret"] = df.px * (1 - COST) / (df.pe * (1 + COST)) - 1
+    cs = COST if cost is None else cost
+    df["ret"] = df.px * (1 - cs) / (df.pe * (1 + cs)) - 1
+    df["cost"] = cs
     return df
 
 
@@ -312,7 +315,7 @@ def portfolio(tr, tickers, start, end=None, K=10, seed=0):
                 if alloc <= prev_eq / K * 0.5:
                     break
                 cash -= alloc
-                pos[r.ticker] = (alloc / (r.pe * (1 + COST)), r.exit, r.px * (1 - COST))
+                pos[r.ticker] = (alloc / (r.pe * (1 + r.cost)), r.exit, r.px * (1 - r.cost))
                 taken.append(r)
         for tk in [k for k, v in pos.items() if v[1] <= d]:
             sh, _, xp = pos.pop(tk)
