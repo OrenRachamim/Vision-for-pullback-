@@ -60,3 +60,14 @@ python -m pytest -q tests                     # בדיקות תקינות למנ
 | `--jobs` | מספר ליבות | עיבוד מקבילי |
 
 הערות: מחירי yfinance מותאמים לדיבידנדים ולפיצולים; רשימת מניות של היום יוצרת הטיית שרידות (survivorship bias).
+
+## S/R strategy engine (ANALYSIS.md section 23)
+
+```
+python sr_features.py --universe universes/sp500.txt universes/sp400.txt universes/sp600.txt   # per-day S/R features -> feat_cache/
+python sr_optimize.py --n 40 --out results_sr_opt          # random search on 2016-2021, test on 2022+ and S&P 600
+python sr_round2.py results_sr_opt results_sr_opt_lim      # market filter / K variants + random baselines
+python sr_pivot_check.py                                   # fill / cost / ranking robustness of the pivot strategy
+python sr_pivot_etf.py                                     # same strategy on 26 ETFs (no survivorship bias)
+python sr_recommend.py --top 20                            # tomorrow's limit orders for the pivot S2 strategy
+```
