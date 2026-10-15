@@ -8,5 +8,5 @@
 | A: right after breakout (all) | 3,286 | 56% | 42% | 50% | -0.10% | +0.10% | +0.33% | -0.015 |
 | A: right after breakout (only those later confirmed) | 1,302 | 75% | 57% | 78% | +2.36% | +3.87% | +4.28% | +0.700 |
 | **B: after pullback + confirmation** | 1,302 | 55% | 40% | 50% | +0.15% | -0.02% | +0.21% | -0.076 |
-| random uptrend days | 23,548 | 61% | 46% | 51% | +0.12% | +0.33% | +0.77% | +0.020 |
+| random uptrend days | 23,548 | 62% | 47% | 51% | +0.17% | +0.35% | +0.80% | +0.003 |
 

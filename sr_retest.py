@@ -13,6 +13,7 @@ sr_retest.py - פריצה מעל אזור שיא כל הזמנים, ואז פו�
 """
 import argparse
 import os
+import zlib
 from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
@@ -36,6 +37,25 @@ def fwd_stats(df, e_idx):
                 c10=c[e_idx + 9] / e - 1, c20=c[e_idx + 19] / e - 1)
 
 
+def retest(df, t0, top, atr):
+    """פולבק ואישור אחרי פריצה ב-t0. מחזיר (status, יום האישור, שפל הפולבק, ימי הפולבק)."""
+    h, l, c = df["High"].values, df["Low"].values, df["Close"].values
+    status, hh, streak, pb_low, pb_days = "no_confirm", h[t0], 0, np.inf, []
+    for k in range(t0 + 1, min(t0 + WINDOW + 1, len(df) - 1)):
+        if c[k] < top - atr[t0]:
+            return "failed", None, pb_low, pb_days
+        if c[k] < c[k - 1]:
+            streak += 1; pb_days.append(k); pb_low = min(pb_low, l[k])
+            if streak > MAX_PULLBACK:
+                return "too_deep", None, pb_low, pb_days
+        else:
+            if pb_days and c[k] > hh:
+                return "confirmed", k, pb_low, pb_days
+            streak = 0
+        hh = max(hh, h[k])
+    return status, None, pb_low, pb_days
+
+
 def run_ticker(tk, start):
     df = bt.load_history(tk)
     if len(df) < bt.DAILY_WARMUP + 60:
@@ -53,20 +73,7 @@ def run_ticker(tk, start):
         row.update({f"A_{k}": v for k, v in a.items()})
         tr = bt.simulate_trade(df, t0, top - atr[t0], 2.0, HOLD, TRAIL, atr)
         row["A_R"] = tr["R"] if tr and tr["exit_reason"] != "open" else np.nan
-        # חיפוש פולבק ואישור
-        status, hh, streak, pulled, pb_low = "no_confirm", h[t0], 0, False, np.inf
-        for k in range(t0 + 1, min(t0 + WINDOW + 1, len(df) - 1)):
-            if c[k] < top - atr[t0]:
-                status = "failed"; break
-            if c[k] < c[k - 1]:
-                streak += 1; pulled = True; pb_low = min(pb_low, l[k])
-                if streak > MAX_PULLBACK:
-                    status = "too_deep"; break
-            else:
-                if pulled and c[k] > hh:
-                    status = "confirmed"; tc = k; break
-                streak = 0
-            hh = max(hh, h[k])
+        status, tc, pb_low, _ = retest(df, t0, top, atr)
         row["status"] = status
         if status == "confirmed":
             bstats = fwd_stats(df, tc + 1)
@@ -83,7 +90,7 @@ def run_ticker(tk, start):
     sma200 = pd.Series(c).rolling(200).mean().values
     lo = bt.bt_lo(df, start)
     cand = [t for t in range(lo, len(df) - 25) if c[t] > sma50[t] and c[t] > sma200[t]]
-    rng = np.random.default_rng(abs(hash(tk)) % 2**32)
+    rng = np.random.default_rng(zlib.crc32(tk.encode()))
     base = []
     risks = [r["B_risk"] for r in rows if r.get("B_risk") == r.get("B_risk") and r.get("B_risk")] or [0.04]
     for t in rng.choice(cand, min(len(cand), 40), replace=False) if cand else []:
