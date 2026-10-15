@@ -31,7 +31,7 @@ def run_ticker(tk, args):
         return tk, [], []
     lv = sr.Levels(df)
     atr = lv.atr
-    bos = sr.find_breakouts(df, args.start, args.end, lv=lv)
+    bos = sr.find_breakouts(df, args.start, args.end, lv=lv, top_only=args.top_only)
     vol = ps.clean_event_volume(df)["Volume"]
     vr = (vol / vol.rolling(20).mean().shift(1)).values
     c = df["Close"].values
@@ -82,6 +82,8 @@ def main(argv=None):
     ap.add_argument("--cache-dir", default="data")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
     ap.add_argument("--out", default="results_sr")
+    ap.add_argument("--top-only", choices=["year", "ath"], default=None,
+                    help="only breakouts of the zone holding the 52-week high (year) or the all-time high in the data (ath)")
     args = ap.parse_args(argv)
     bt.use_scanner("pullback_scanner")
     tickers = [t.upper() for t in args.tickers]
@@ -112,7 +114,9 @@ def main(argv=None):
         return (f"| {name} | {len(g):,} | {(g.R > 0).mean():.0%} | {g.R.mean():+.3f} | "
                 f"{g.R.mean() - cR.mean():+.3f} | {g.R.mean() - cT.mean():+.3f} |")
 
-    L = [f"# Resistance breakouts - {len(tickers)} stocks, {args.start} -> {args.end or 'today'}", "",
+    L = [f"# Resistance breakouts - {len(tickers)} stocks, {args.start} -> {args.end or 'today'}"
+         + (f" - only the zone holding the {'52-week' if args.top_only == 'year' else 'all-time (since 2010)'} high"
+            if args.top_only else ""), "",
          f"* exit: {ex_txt}", f"* {len(sig):,} breakouts ({len(sig) / len(tickers) / years:.1f} per stock per year), "
          f"{len(closed):,} closed trades on {nd:,} distinct dates", "",
          "| | trades | win | avg R | vs random days | vs random uptrend days |", "|---|---|---|---|---|---|",

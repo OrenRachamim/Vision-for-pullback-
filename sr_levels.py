@@ -86,17 +86,22 @@ class Levels:
 
 
 def find_breakouts(df, start=None, end=None, min_touches=MIN_TOUCHES, margin_atr=MARGIN_ATR, lv=None,
-                   below_days=BELOW_DAYS):
+                   below_days=BELOW_DAYS, top_only=None):
     """פריצה ביום t מעל אזור התנגדות:
       * לאזור לפחות min_touches נגיעות, והנגיעה האחרונה בו היא שיא (נגיעה מלמטה);
       * המחיר נסגר מתחת לראש האזור below_days ימים ברציפות לפני t;
       * הסגירה ב-t מעל ראש האזור + margin_atr*ATR;
-      * כל אזור נותן איתות אחד - שוב רק אם נוצר בו שיא מפנה חדש אחרי הפריצה הקודמת."""
+      * כל אזור נותן איתות אחד - שוב רק אם נוצר בו שיא מפנה חדש אחרי הפריצה הקודמת.
+    top_only: "year" - רק פריצה של האזור שמכיל את השיא של השנה האחרונה (שיא 52 שבועות);
+              "ath"  - רק פריצה של האזור שמכיל את השיא של כל הנתונים עד אתמול (שיא כל הזמנים בנתונים).
+              פריצות של אזורים נמוכים יותר - מתעלמים."""
     lv = lv or Levels(df)
     c = df["Close"].values
     lo = max(bt.DAILY_WARMUP, df.index.searchsorted(pd.Timestamp(start)) if start else 0)
     hi = df.index.searchsorted(pd.Timestamp(end), side="right") if end else len(df)
     lo = max(lo, below_days + 1)
+    h = df["High"].values
+    ath = np.maximum.accumulate(h)                          # שיא מצטבר עד כל יום
     broken = {}                                             # id אזור -> יום הפריצה האחרונה
     out = []
     for t in range(lo, hi):
@@ -110,6 +115,10 @@ def find_breakouts(df, start=None, end=None, min_touches=MIN_TOUCHES, margin_atr
                 continue
             if L["id"] in broken and L["last_high"] <= broken[L["id"]]:
                 continue
+            if top_only:
+                peak = ath[t - 1] if top_only == "ath" else h[max(0, t - lv.lookback):t].max()
+                if L["top"] < peak - lv.tol_atr * lv.atr[t]:       # האזור לא מכיל את השיא -> מתעלמים
+                    continue
             cands.append(L)
         if cands:
             L = max(cands, key=lambda x: x["top"])
