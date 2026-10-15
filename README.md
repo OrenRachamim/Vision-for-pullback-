@@ -22,6 +22,8 @@ python backtest.py --scanner pullback_scanner_v1 --out results_v1   # הגרסה
 python backtest.py --universe universes/sp500.txt universes/sp400.txt --weekly-only   # ~900 מניות, שבועי בלבד
 python backtest.py --universe universes/sp500.txt universes/sp400.txt --combo --max-hold 10   # איתות משולב
 python find_buy_signals.py --universe universes/sp500.txt --max 10   # איתותים משולבים אחרונים, עם גרפים
+python backtest.py --universe universes/sp500.txt universes/sp400.txt --index-combo market --trail-atr 3 --max-hold 60   # מניה + מדד
+python index_control.py results --universe universes/sp500.txt --index-combo market --trail-atr 3 --max-hold 60   # בדיקות חוסן
 python -m pytest -q tests                     # בדיקות תקינות למנוע
 ```
 
@@ -49,6 +51,10 @@ python -m pytest -q tests                     # בדיקות תקינות למנ
 | `--universe` | - | קובץ/קבצים עם טיקר בכל שורה (יש `universes/sp500.txt`, `sp400.txt`) |
 | `--combo` | כבוי | איתות משולב: שבועי דורך, יומי באותו יום או אחריו מפעיל קנייה |
 | `--arm-days` | 15 | כמה ימי מסחר אחרי השבועי איתות יומי עדיין נחשב |
+| `--index-combo` | - | `market` (SPY/MDY/IJR) או `sector` (XLK/XLF/...): קנייה כשגם המניה וגם המדד שלה באיתות פולבק יומי |
+| `--index-window` | 5 | כמה ימי מסחר לפני איתות המניה איתות המדד עדיין נחשב |
+| `--trail-atr` | - | סטופ נגרר: הגבוה מאז הכניסה פחות K×ATR14, בלי יעד קבוע |
+| `--require-uptrend` | כבוי | במשולב: הקנייה רק מעל SMA200 (וה-CONTROL בהתאם) |
 | `--weekly-only` | כבוי | רק הזיהוי השבועי, הרבה יותר מהיר ליוניברס גדול |
 | `--scanner` | pullback_scanner | איזו גרסה לבדוק |
 | `--jobs` | מספר ליבות | עיבוד מקבילי |
