@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 import backtest as bt
+import pullback_scanner as ps
 import sr_levels as sr
 
 WINDOW = 10        # ימים מהפריצה לאישור
@@ -63,16 +64,19 @@ def run_ticker(tk, start):
     lv = sr.Levels(df)
     atr = lv.atr
     o, h, l, c = (df[k].values for k in ("Open", "High", "Low", "Close"))
+    vol = ps.clean_event_volume(df)["Volume"]
+    vr = (vol / vol.rolling(20).mean().shift(1)).values      # ווליום היום / ממוצע 20 הימים הקודמים
     rows = []
     for b in sr.find_breakouts(df, start, None, lv=lv, top_only="ath"):
         t0, top = b["t"], b["level"]["top"]
-        row = dict(ticker=tk, date=df.index[t0].date())
+        row = dict(ticker=tk, date=df.index[t0].date(), vol_ratio=vr[t0], day_ret=c[t0] / c[t0 - 1] - 1)
         a = fwd_stats(df, t0 + 1)
         if a is None:
             continue
         row.update({f"A_{k}": v for k, v in a.items()})
         tr = bt.simulate_trade(df, t0, top - atr[t0], 2.0, HOLD, TRAIL, atr)
         row["A_R"] = tr["R"] if tr and tr["exit_reason"] != "open" else np.nan
+        row["A_risk"] = tr.get("risk_pct", np.nan) if tr else np.nan
         status, tc, pb_low, _ = retest(df, t0, top, atr)
         row["status"] = status
         if status == "confirmed":
@@ -93,11 +97,15 @@ def run_ticker(tk, start):
     rng = np.random.default_rng(zlib.crc32(tk.encode()))
     base = []
     risks = [r["B_risk"] for r in rows if r.get("B_risk") == r.get("B_risk") and r.get("B_risk")] or [0.04]
+    risks_a = [r["A_risk"] for r in rows if r["A_risk"] == r["A_risk"] and r["A_risk"]] or [0.04]
     for t in rng.choice(cand, min(len(cand), 40), replace=False) if cand else []:
         s = fwd_stats(df, t + 1)
         tr = bt.simulate_trade(df, t, o[t + 1] * (1 - rng.choice(risks)), 2.0, HOLD, TRAIL, atr)
+        ta = bt.simulate_trade(df, t, o[t + 1] * (1 - rng.choice(risks_a)), 2.0, HOLD, TRAIL, atr)
         if s:
             s["R"] = tr["R"] if tr and tr["exit_reason"] != "open" else np.nan
+            s["RA"] = ta["R"] if ta and ta["exit_reason"] != "open" else np.nan
+            s.update(vol_ratio=vr[t], day_ret=c[t] / c[t - 1] - 1)
             base.append(s)
     return rows, base
 
@@ -118,7 +126,25 @@ def summarize(sig, base, label):
          line("A: right after breakout (all)", sig.A_mh5, sig.A_c5, sig.A_c10, sig.A_c20, sig.A_R),
          line("A: right after breakout (only those later confirmed)", conf.A_mh5, conf.A_c5, conf.A_c10, conf.A_c20, conf.A_R),
          line("**B: after pullback + confirmation**", conf.B_mh5, conf.B_c5, conf.B_c10, conf.B_c20, conf.B_R),
-         line("random uptrend days", base.mh5, base.c5, base.c10, base.c20, base.R), ""]
+         line("random uptrend days", base.mh5, base.c5, base.c10, base.c20, base.R), "",
+         "### Entry at the open after the breakout, by breakout-day volume (volume / avg of prior 20 days)", "",
+         "Control: random uptrend days with the same volume ratio *and* an up day (close > prior close), "
+         "stop distance drawn from the breakout trades.", "",
+         "| volume | breakouts | touched +2% / +3% in 5d | up after 5d | avg 10d | avg R | control: same volume, up day "
+         "(n / +2% / up 5d / avg 10d / avg R) | breakout - control R |",
+         "|---|---|---|---|---|---|---|---|"]
+    ub = base[base.day_ret > 0]
+    for name, lo_, hi_ in [("< 1x", 0, 1), ("1-1.5x", 1, 1.5), ("1.5-2x", 1.5, 2), ("2-3x", 2, 3), ("> 3x", 3, np.inf),
+                           ("all >= 1.5x", 1.5, np.inf), ("all >= 2x", 2, np.inf)]:
+        g = sig[(sig.vol_ratio >= lo_) & (sig.vol_ratio < hi_)]
+        b = ub[(ub.vol_ratio >= lo_) & (ub.vol_ratio < hi_)]
+        if len(g) < 20:
+            continue
+        L.append(f"| {name} | {len(g):,} | {(g.A_mh5 >= .02).mean():.0%} / {(g.A_mh5 >= .03).mean():.0%} | "
+                 f"{(g.A_c5 > 0).mean():.0%} | {g.A_c10.mean():+.2%} | {np.nanmean(g.A_R):+.3f} | "
+                 f"{len(b):,} / {(b.mh5 >= .02).mean():.0%} / {(b.c5 > 0).mean():.0%} / {b.c10.mean():+.2%} / "
+                 f"{np.nanmean(b.RA):+.3f} | {np.nanmean(g.A_R) - np.nanmean(b.RA):+.3f} |")
+    L.append("")
     return "\n".join(L)
 
 
