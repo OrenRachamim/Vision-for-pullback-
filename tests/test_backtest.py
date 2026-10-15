@@ -170,3 +170,22 @@ def test_trailing_stop():
     flat = _bars([(99, 100, 98, 99), (100, 101, 96, 100), (100, 101, 94, 95)])
     r = bt.simulate_trade(flat, 0, 95, max_hold=10, trail_atr=3, atr=np.full(10, 5.0))
     assert r["exit_reason"] == "stop" and r["R"] == -1
+
+
+def test_index_combo_window_and_invalidation():
+    idx = pd.bdate_range("2024-01-01", periods=40)
+    df = pd.DataFrame(dict(Open=1.0, High=1.0, Low=1.0, Close=100.0, Volume=1.0), index=idx)
+    idf = df.copy()
+    D = dict(base_lo=98.0, score=50)
+    I = dict(base_lo=95.0, score=50)
+    sh = lambda t: dict(t=t, t0=0, daily=D, weekly=None)
+    ih = lambda t: dict(t=t, t0=0, daily=I, weekly=None)
+    # index signal 3 days before the stock signal -> counts; 8 days before -> too old (window 5)
+    assert [s["t"] for s, i in bt.index_combo_signals(df, [sh(20)], idf, [ih(17)], 5)] == [20]
+    assert bt.index_combo_signals(df, [sh(20)], idf, [ih(12)], 5) == []
+    # index signal after the stock signal does not count
+    assert bt.index_combo_signals(df, [sh(20)], idf, [ih(22)], 5) == []
+    # index closed below its base low in between -> invalid
+    bad = idf.copy()
+    bad.iloc[18, bad.columns.get_loc("Close")] = 90.0
+    assert bt.index_combo_signals(df, [sh(20)], bad, [ih(17)], 5) == []

@@ -24,6 +24,9 @@ DAILY = dict(min_drop=0.05, lookback=40, base_min=3, base_max=10, vol_mult=1.5,
              peak_lookback=40, min_decline=5, near_low=0.03)   # יומי = פולבק קצר (עד ~2 חודשים)
 WEEKLY = dict(min_drop=0.10, lookback=26, base_min=2, base_max=6, vol_mult=1.3,
               peak_lookback=52, min_decline=3, near_low=0.05)
+# מדד (SPY / MDY / IJR / קרן סקטור): אותו דפוס יומי, אבל פולבק קטן יותר ותנאי ווליום רך יותר
+INDEX = dict(min_drop=0.02, lookback=40, base_min=3, base_max=10, vol_mult=1.0,
+             peak_lookback=40, min_decline=3, near_low=0.02)
 SLOW_SPLIT = 0.75   # שלב ההאטה מתחיל אחרי שהמחיר השלים 75% מהירידה (בסגירה)
 
 PHASE_COLORS = {"decline": "#F7C1C1", "slowdown": "#FAC775",

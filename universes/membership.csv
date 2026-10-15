@@ -1,0 +1,1504 @@
+ticker,index,sector
+MMM,sp500,Industrials
+AOS,sp500,Industrials
+ABT,sp500,Health Care
+ABBV,sp500,Health Care
+ACN,sp500,Information Technology
+ADBE,sp500,Information Technology
+AMD,sp500,Information Technology
+AES,sp500,Utilities
+AFL,sp500,Financials
+A,sp500,Health Care
+APD,sp500,Materials
+ABNB,sp500,Consumer Discretionary
+AKAM,sp500,Information Technology
+ALB,sp500,Materials
+ARE,sp500,Real Estate
+ALGN,sp500,Health Care
+ALLE,sp500,Industrials
+LNT,sp500,Utilities
+ALL,sp500,Financials
+GOOGL,sp500,Communication Services
+GOOG,sp500,Communication Services
+MO,sp500,Consumer Staples
+AMZN,sp500,Consumer Discretionary
+AMCR,sp500,Materials
+AEE,sp500,Utilities
+AEP,sp500,Utilities
+AXP,sp500,Financials
+AIG,sp500,Financials
+AMT,sp500,Real Estate
+AWK,sp500,Utilities
+AMP,sp500,Financials
+AME,sp500,Industrials
+AMGN,sp500,Health Care
+APH,sp500,Information Technology
+ADI,sp500,Information Technology
+AON,sp500,Financials
+APA,sp500,Energy
+APO,sp500,Financials
+AAPL,sp500,Information Technology
+AMAT,sp500,Information Technology
+APP,sp500,Communication Services
+APTV,sp500,Consumer Discretionary
+ACGL,sp500,Financials
+ADM,sp500,Consumer Staples
+ARES,sp500,Financials
+ANET,sp500,Information Technology
+AJG,sp500,Financials
+AIZ,sp500,Financials
+T,sp500,Communication Services
+ATO,sp500,Utilities
+ADSK,sp500,Information Technology
+ADP,sp500,Industrials
+AZO,sp500,Consumer Discretionary
+AVY,sp500,Materials
+AXON,sp500,Industrials
+BKR,sp500,Energy
+BALL,sp500,Materials
+BAC,sp500,Financials
+BAX,sp500,Health Care
+BDX,sp500,Health Care
+BRK-B,sp500,Financials
+BBY,sp500,Consumer Discretionary
+TECH,sp500,Health Care
+BIIB,sp500,Health Care
+BLK,sp500,Financials
+BX,sp500,Financials
+XYZ,sp500,Financials
+BE,sp500,Industrials
+BNY,sp500,Financials
+BA,sp500,Industrials
+BKNG,sp500,Consumer Discretionary
+BSX,sp500,Health Care
+BMY,sp500,Health Care
+AVGO,sp500,Information Technology
+BR,sp500,Industrials
+BRO,sp500,Financials
+BF-B,sp500,Consumer Staples
+BG,sp500,Consumer Staples
+BXP,sp500,Real Estate
+CHRW,sp500,Industrials
+CDNS,sp500,Information Technology
+CPT,sp500,Real Estate
+COF,sp500,Financials
+CAH,sp500,Health Care
+CCL,sp500,Consumer Discretionary
+CARR,sp500,Industrials
+CVNA,sp500,Consumer Discretionary
+CASY,sp500,Consumer Staples
+CAT,sp500,Industrials
+CBOE,sp500,Financials
+CBRE,sp500,Real Estate
+CDW,sp500,Information Technology
+COR,sp500,Health Care
+CNC,sp500,Health Care
+CNP,sp500,Utilities
+CF,sp500,Materials
+CRL,sp500,Health Care
+SCHW,sp500,Financials
+CHTR,sp500,Communication Services
+CVX,sp500,Energy
+CMG,sp500,Consumer Discretionary
+CB,sp500,Financials
+CHD,sp500,Consumer Staples
+CIEN,sp500,Information Technology
+CI,sp500,Health Care
+CINF,sp500,Financials
+CTAS,sp500,Industrials
+CSCO,sp500,Information Technology
+C,sp500,Financials
+CFG,sp500,Financials
+CLX,sp500,Consumer Staples
+CME,sp500,Financials
+CMS,sp500,Utilities
+KO,sp500,Consumer Staples
+CTSH,sp500,Information Technology
+COHR,sp500,Information Technology
+COIN,sp500,Financials
+CL,sp500,Consumer Staples
+CMCSA,sp500,Communication Services
+FIX,sp500,Industrials
+COP,sp500,Energy
+ED,sp500,Utilities
+STZ,sp500,Consumer Staples
+CEG,sp500,Utilities
+COO,sp500,Health Care
+CPRT,sp500,Industrials
+GLW,sp500,Information Technology
+CPAY,sp500,Financials
+CSGP,sp500,Real Estate
+COST,sp500,Consumer Staples
+CRH,sp500,Materials
+CRWD,sp500,Information Technology
+CCI,sp500,Real Estate
+CSX,sp500,Industrials
+CMI,sp500,Industrials
+CVS,sp500,Health Care
+DHR,sp500,Health Care
+DRI,sp500,Consumer Discretionary
+DDOG,sp500,Information Technology
+DVA,sp500,Health Care
+DECK,sp500,Consumer Discretionary
+DE,sp500,Industrials
+DELL,sp500,Information Technology
+DAL,sp500,Industrials
+DVN,sp500,Energy
+DXCM,sp500,Health Care
+FANG,sp500,Energy
+DLR,sp500,Real Estate
+DG,sp500,Consumer Staples
+DLTR,sp500,Consumer Staples
+D,sp500,Utilities
+DPZ,sp500,Consumer Discretionary
+DASH,sp500,Consumer Discretionary
+DOV,sp500,Industrials
+DOW,sp500,Materials
+DHI,sp500,Consumer Discretionary
+DTE,sp500,Utilities
+DUK,sp500,Utilities
+DD,sp500,Industrials
+ETN,sp500,Industrials
+EBAY,sp500,Consumer Discretionary
+ECHO,sp500,Communication Services
+ECL,sp500,Materials
+EIX,sp500,Utilities
+EW,sp500,Health Care
+ELV,sp500,Health Care
+EME,sp500,Industrials
+EMR,sp500,Industrials
+ETR,sp500,Utilities
+EOG,sp500,Energy
+EQT,sp500,Energy
+EFX,sp500,Industrials
+EQIX,sp500,Real Estate
+ERIE,sp500,Financials
+ESS,sp500,Real Estate
+EL,sp500,Consumer Staples
+EG,sp500,Financials
+EVRG,sp500,Utilities
+P,sp500,Information Technology
+ES,sp500,Utilities
+EXC,sp500,Utilities
+EXE,sp500,Energy
+EXPE,sp500,Consumer Discretionary
+EXPD,sp500,Industrials
+EXR,sp500,Real Estate
+XOM,sp500,Energy
+FFIV,sp500,Information Technology
+FDS,sp500,Financials
+FICO,sp500,Information Technology
+FAST,sp500,Industrials
+FRT,sp500,Real Estate
+FDX,sp500,Industrials
+FDXF,sp500,Industrials
+FERG,sp500,Industrials
+FIS,sp500,Financials
+FITB,sp500,Financials
+FSLR,sp500,Information Technology
+FE,sp500,Utilities
+FISV,sp500,Financials
+FLEX,sp500,Information Technology
+F,sp500,Consumer Discretionary
+FTNT,sp500,Information Technology
+FTV,sp500,Industrials
+FOXA,sp500,Communication Services
+FOX,sp500,Communication Services
+BEN,sp500,Financials
+FCX,sp500,Materials
+GRMN,sp500,Consumer Discretionary
+IT,sp500,Information Technology
+GE,sp500,Industrials
+GEHC,sp500,Health Care
+GEV,sp500,Industrials
+GEN,sp500,Information Technology
+GNRC,sp500,Industrials
+GD,sp500,Industrials
+GIS,sp500,Consumer Staples
+GM,sp500,Consumer Discretionary
+GPC,sp500,Consumer Discretionary
+GILD,sp500,Health Care
+GPN,sp500,Financials
+GL,sp500,Financials
+GDDY,sp500,Information Technology
+GS,sp500,Financials
+HAL,sp500,Energy
+HIG,sp500,Financials
+HAS,sp500,Consumer Discretionary
+HCA,sp500,Health Care
+DOC,sp500,Real Estate
+HSIC,sp500,Health Care
+HSY,sp500,Consumer Staples
+HPE,sp500,Information Technology
+HLT,sp500,Consumer Discretionary
+HD,sp500,Consumer Discretionary
+HONA,sp500,Industrials
+HON,sp500,Industrials
+HRL,sp500,Consumer Staples
+HST,sp500,Real Estate
+HWM,sp500,Industrials
+HPQ,sp500,Information Technology
+HUBB,sp500,Industrials
+HUM,sp500,Health Care
+HBAN,sp500,Financials
+HII,sp500,Industrials
+IBM,sp500,Information Technology
+IEX,sp500,Industrials
+IDXX,sp500,Health Care
+ITW,sp500,Industrials
+ILMN,sp500,Health Care
+INCY,sp500,Health Care
+IR,sp500,Industrials
+PODD,sp500,Health Care
+INTC,sp500,Information Technology
+IBKR,sp500,Financials
+ICE,sp500,Financials
+IFF,sp500,Materials
+IP,sp500,Materials
+INTU,sp500,Information Technology
+ISRG,sp500,Health Care
+IVZ,sp500,Financials
+INVH,sp500,Real Estate
+IQV,sp500,Health Care
+IRM,sp500,Real Estate
+JBHT,sp500,Industrials
+JBL,sp500,Information Technology
+JKHY,sp500,Financials
+J,sp500,Industrials
+JNJ,sp500,Health Care
+JCI,sp500,Industrials
+JPM,sp500,Financials
+KVUE,sp500,Consumer Staples
+KDP,sp500,Consumer Staples
+KEY,sp500,Financials
+KEYS,sp500,Information Technology
+KMB,sp500,Consumer Staples
+KIM,sp500,Real Estate
+KMI,sp500,Energy
+KKR,sp500,Financials
+KLAC,sp500,Information Technology
+KHC,sp500,Consumer Staples
+KR,sp500,Consumer Staples
+LHX,sp500,Industrials
+LH,sp500,Health Care
+LRCX,sp500,Information Technology
+LVS,sp500,Consumer Discretionary
+LDOS,sp500,Industrials
+LEN,sp500,Consumer Discretionary
+LII,sp500,Industrials
+LLY,sp500,Health Care
+LIN,sp500,Materials
+LYV,sp500,Communication Services
+LMT,sp500,Industrials
+L,sp500,Financials
+LOW,sp500,Consumer Discretionary
+LULU,sp500,Consumer Discretionary
+LITE,sp500,Information Technology
+LYB,sp500,Materials
+MTB,sp500,Financials
+MPC,sp500,Energy
+MAR,sp500,Consumer Discretionary
+MRSH,sp500,Financials
+MLM,sp500,Materials
+MRVL,sp500,Information Technology
+MAS,sp500,Industrials
+MA,sp500,Financials
+MKC,sp500,Consumer Staples
+MCD,sp500,Consumer Discretionary
+MCK,sp500,Health Care
+MDT,sp500,Health Care
+MRK,sp500,Health Care
+META,sp500,Communication Services
+MET,sp500,Financials
+MTD,sp500,Health Care
+MGM,sp500,Consumer Discretionary
+MCHP,sp500,Information Technology
+MU,sp500,Information Technology
+MSFT,sp500,Information Technology
+MAA,sp500,Real Estate
+MRNA,sp500,Health Care
+MDLZ,sp500,Consumer Staples
+MPWR,sp500,Information Technology
+MNST,sp500,Consumer Staples
+MCO,sp500,Financials
+MS,sp500,Financials
+MOS,sp500,Materials
+MSI,sp500,Information Technology
+MSCI,sp500,Financials
+NDAQ,sp500,Financials
+NTAP,sp500,Information Technology
+NFLX,sp500,Communication Services
+NEM,sp500,Materials
+NWSA,sp500,Communication Services
+NWS,sp500,Communication Services
+NEE,sp500,Utilities
+NKE,sp500,Consumer Discretionary
+NI,sp500,Utilities
+NDSN,sp500,Industrials
+NSC,sp500,Industrials
+NTRS,sp500,Financials
+NOC,sp500,Industrials
+NCLH,sp500,Consumer Discretionary
+NRG,sp500,Utilities
+NUE,sp500,Materials
+NVDA,sp500,Information Technology
+NVR,sp500,Consumer Discretionary
+NXPI,sp500,Information Technology
+ORLY,sp500,Consumer Discretionary
+OXY,sp500,Energy
+ODFL,sp500,Industrials
+OMC,sp500,Communication Services
+ON,sp500,Information Technology
+OKE,sp500,Energy
+ORCL,sp500,Information Technology
+OTIS,sp500,Industrials
+PCAR,sp500,Industrials
+PKG,sp500,Materials
+PLTR,sp500,Information Technology
+PANW,sp500,Information Technology
+PH,sp500,Industrials
+PAYX,sp500,Industrials
+PYPL,sp500,Financials
+PNR,sp500,Industrials
+PEP,sp500,Consumer Staples
+PFE,sp500,Health Care
+PCG,sp500,Utilities
+PM,sp500,Consumer Staples
+PSX,sp500,Energy
+PNW,sp500,Utilities
+PNC,sp500,Financials
+PPG,sp500,Materials
+PPL,sp500,Utilities
+PFG,sp500,Financials
+PG,sp500,Consumer Staples
+PGR,sp500,Financials
+PLD,sp500,Real Estate
+PRU,sp500,Financials
+PEG,sp500,Utilities
+PTC,sp500,Information Technology
+PSA,sp500,Real Estate
+PHM,sp500,Consumer Discretionary
+PWR,sp500,Industrials
+QCOM,sp500,Information Technology
+DGX,sp500,Health Care
+Q,sp500,Information Technology
+RL,sp500,Consumer Discretionary
+RJF,sp500,Financials
+RDDT,sp500,Communication Services
+RTX,sp500,Industrials
+O,sp500,Real Estate
+REG,sp500,Real Estate
+REGN,sp500,Health Care
+RF,sp500,Financials
+RSG,sp500,Industrials
+RMD,sp500,Health Care
+RVTY,sp500,Health Care
+HOOD,sp500,Financials
+ROK,sp500,Industrials
+ROL,sp500,Industrials
+ROP,sp500,Information Technology
+ROST,sp500,Consumer Discretionary
+RCL,sp500,Consumer Discretionary
+SPGI,sp500,Financials
+CRM,sp500,Information Technology
+SNDK,sp500,Information Technology
+SBAC,sp500,Real Estate
+SLB,sp500,Energy
+STX,sp500,Information Technology
+SRE,sp500,Utilities
+NOW,sp500,Information Technology
+SHW,sp500,Materials
+SPG,sp500,Real Estate
+SKYD,sp500,Communication Services
+SWKS,sp500,Information Technology
+SJM,sp500,Consumer Staples
+SW,sp500,Materials
+SNA,sp500,Industrials
+SOLV,sp500,Health Care
+SO,sp500,Utilities
+LUV,sp500,Industrials
+SWK,sp500,Industrials
+SBUX,sp500,Consumer Discretionary
+STT,sp500,Financials
+STLD,sp500,Materials
+STE,sp500,Health Care
+SYK,sp500,Health Care
+SMCI,sp500,Information Technology
+SYF,sp500,Financials
+SNPS,sp500,Information Technology
+SYY,sp500,Consumer Staples
+TMUS,sp500,Communication Services
+TROW,sp500,Financials
+TTWO,sp500,Communication Services
+TPR,sp500,Consumer Discretionary
+TRGP,sp500,Energy
+TGT,sp500,Consumer Staples
+TEL,sp500,Information Technology
+TDY,sp500,Information Technology
+TER,sp500,Information Technology
+TSLA,sp500,Consumer Discretionary
+TXN,sp500,Information Technology
+TPL,sp500,Energy
+TXT,sp500,Industrials
+TMO,sp500,Health Care
+TJX,sp500,Consumer Discretionary
+TKO,sp500,Communication Services
+TSCO,sp500,Consumer Discretionary
+TT,sp500,Industrials
+TDG,sp500,Industrials
+TRV,sp500,Financials
+TRMB,sp500,Information Technology
+TFC,sp500,Financials
+TWLO,sp500,Information Technology
+TYL,sp500,Information Technology
+TSN,sp500,Consumer Staples
+USB,sp500,Financials
+UBER,sp500,Industrials
+UDR,sp500,Real Estate
+ULTA,sp500,Consumer Discretionary
+UNP,sp500,Industrials
+UAL,sp500,Industrials
+UPS,sp500,Industrials
+URI,sp500,Industrials
+UNH,sp500,Health Care
+UHS,sp500,Health Care
+VLO,sp500,Energy
+VEEV,sp500,Health Care
+VTR,sp500,Real Estate
+VLTO,sp500,Industrials
+VRSN,sp500,Information Technology
+VRSK,sp500,Industrials
+VZ,sp500,Communication Services
+VRTX,sp500,Health Care
+VRT,sp500,Industrials
+VTRS,sp500,Health Care
+VICI,sp500,Real Estate
+V,sp500,Financials
+VST,sp500,Utilities
+VMRK,sp500,Real Estate
+VMC,sp500,Materials
+VYLR,sp500,Consumer Staples
+WRB,sp500,Financials
+GWW,sp500,Industrials
+WAB,sp500,Industrials
+WMT,sp500,Consumer Staples
+DIS,sp500,Communication Services
+WM,sp500,Industrials
+WAT,sp500,Health Care
+WEC,sp500,Utilities
+WFC,sp500,Financials
+WELL,sp500,Real Estate
+WST,sp500,Health Care
+WDC,sp500,Information Technology
+WY,sp500,Real Estate
+WSM,sp500,Consumer Discretionary
+WMB,sp500,Energy
+WTW,sp500,Financials
+WDAY,sp500,Information Technology
+WYNN,sp500,Consumer Discretionary
+XEL,sp500,Utilities
+XYL,sp500,Industrials
+YUM,sp500,Consumer Discretionary
+ZBRA,sp500,Information Technology
+ZBH,sp500,Health Care
+ZTS,sp500,Health Care
+AA,sp400,Materials
+AAL,sp400,Industrials
+AAON,sp400,Industrials
+ACI,sp400,Consumer Staples
+ACM,sp400,Industrials
+ADC,sp400,Real Estate
+AEIS,sp400,Information Technology
+AFG,sp400,Financials
+AGCO,sp400,Industrials
+AGNC,sp400,Financials
+AHR,sp400,Real Estate
+AIT,sp400,Industrials
+ALGM,sp400,Information Technology
+ALK,sp400,Industrials
+ALLY,sp400,Financials
+ALSN,sp400,Industrials
+ALV,sp400,Consumer Discretionary
+AM,sp400,Energy
+AMG,sp400,Financials
+AMH,sp400,Real Estate
+AMKR,sp400,Information Technology
+AN,sp400,Consumer Discretionary
+ANF,sp400,Consumer Discretionary
+APG,sp400,Industrials
+APPF,sp400,Information Technology
+AR,sp400,Energy
+ARMK,sp400,Consumer Discretionary
+ARW,sp400,Information Technology
+ARWR,sp400,Health Care
+ASB,sp400,Financials
+ASH,sp400,Materials
+ATI,sp400,Industrials
+ATR,sp400,Materials
+AVAV,sp400,Industrials
+AVNT,sp400,Materials
+AVT,sp400,Information Technology
+AVTR,sp400,Health Care
+AXTA,sp400,Materials
+AYI,sp400,Industrials
+BAH,sp400,Industrials
+BBWI,sp400,Consumer Discretionary
+BC,sp400,Consumer Discretionary
+BCO,sp400,Industrials
+BDC,sp400,Information Technology
+BHF,sp400,Financials
+BILL,sp400,Information Technology
+BIO,sp400,Health Care
+BJ,sp400,Consumer Staples
+BKH,sp400,Utilities
+BMRN,sp400,Health Care
+BRKR,sp400,Health Care
+BROS,sp400,Consumer Discretionary
+BRX,sp400,Real Estate
+BSY,sp400,Information Technology
+BTSG,sp400,Health Care
+BURL,sp400,Consumer Discretionary
+BWA,sp400,Consumer Discretionary
+BWXT,sp400,Industrials
+BYD,sp400,Consumer Discretionary
+CACI,sp400,Industrials
+CAR,sp400,Industrials
+CART,sp400,Consumer Staples
+CAVA,sp400,Consumer Discretionary
+CBSH,sp400,Financials
+CBT,sp400,Materials
+CCK,sp400,Materials
+CDE,sp400,Materials
+CDP,sp400,Real Estate
+CELH,sp400,Consumer Staples
+CFR,sp400,Financials
+CG,sp400,Financials
+CGNX,sp400,Information Technology
+CHDN,sp400,Consumer Discretionary
+CHE,sp400,Health Care
+CHH,sp400,Consumer Discretionary
+CHRD,sp400,Energy
+CHWY,sp400,Consumer Discretionary
+CLF,sp400,Materials
+CLH,sp400,Industrials
+CMC,sp400,Materials
+CNH,sp400,Industrials
+CNM,sp400,Industrials
+CNO,sp400,Financials
+CNX,sp400,Energy
+COKE,sp400,Consumer Staples
+COLB,sp400,Financials
+COLM,sp400,Consumer Discretionary
+CORT,sp400,Health Care
+CR,sp400,Industrials
+CRBG,sp400,Financials
+CROX,sp400,Consumer Discretionary
+CRS,sp400,Industrials
+CRUS,sp400,Information Technology
+CSL,sp400,Industrials
+CTRE,sp400,Real Estate
+CTVA,sp400,Materials
+CUBE,sp400,Real Estate
+CUZ,sp400,Real Estate
+CVLT,sp400,Information Technology
+CW,sp400,Industrials
+CXT,sp400,Information Technology
+CYTK,sp400,Health Care
+DAR,sp400,Consumer Staples
+DBX,sp400,Information Technology
+DCI,sp400,Industrials
+DINO,sp400,Energy
+DKS,sp400,Consumer Discretionary
+DLB,sp400,Information Technology
+DOCN,sp400,Information Technology
+DOCS,sp400,Health Care
+DOCU,sp400,Information Technology
+DT,sp400,Information Technology
+DTM,sp400,Energy
+DUOL,sp400,Consumer Discretionary
+DY,sp400,Industrials
+EAT,sp400,Consumer Discretionary
+EEFT,sp400,Financials
+EGP,sp400,Real Estate
+EHC,sp400,Health Care
+ELAN,sp400,Health Care
+ELF,sp400,Consumer Staples
+ELS,sp400,Real Estate
+ENS,sp400,Industrials
+ENSG,sp400,Health Care
+ENTG,sp400,Information Technology
+EPR,sp400,Real Estate
+EQH,sp400,Financials
+ESAB,sp400,Industrials
+ESNT,sp400,Financials
+EVR,sp400,Financials
+EWBC,sp400,Financials
+EXEL,sp400,Health Care
+EXLS,sp400,Industrials
+EXP,sp400,Materials
+EXPO,sp400,Industrials
+FAF,sp400,Financials
+FBIN,sp400,Industrials
+FCFS,sp400,Financials
+FCN,sp400,Industrials
+FFIN,sp400,Financials
+FHI,sp400,Financials
+FHN,sp400,Financials
+FIVE,sp400,Consumer Discretionary
+FLG,sp400,Financials
+FLR,sp400,Industrials
+FLS,sp400,Industrials
+FN,sp400,Information Technology
+FNB,sp400,Financials
+FND,sp400,Consumer Discretionary
+FNF,sp400,Financials
+FORM,sp400,Information Technology
+FOUR,sp400,Financials
+FR,sp400,Real Estate
+FTI,sp400,Energy
+G,sp400,Industrials
+GAP,sp400,Consumer Discretionary
+GATX,sp400,Industrials
+GBCI,sp400,Financials
+GEF,sp400,Materials
+GGG,sp400,Industrials
+GHC,sp400,Consumer Discretionary
+GLPI,sp400,Real Estate
+GME,sp400,Consumer Discretionary
+GMED,sp400,Health Care
+GNTX,sp400,Consumer Discretionary
+GPK,sp400,Materials
+GWRE,sp400,Information Technology
+GXO,sp400,Industrials
+H,sp400,Consumer Discretionary
+HAE,sp400,Health Care
+HALO,sp400,Health Care
+HGV,sp400,Consumer Discretionary
+HIMS,sp400,Health Care
+HL,sp400,Materials
+HLI,sp400,Financials
+HLNE,sp400,Financials
+HOG,sp400,Consumer Discretionary
+HOMB,sp400,Financials
+HQY,sp400,Health Care
+HR,sp400,Real Estate
+HRB,sp400,Consumer Discretionary
+HUBS,sp400,Information Technology
+HWC,sp400,Financials
+HXL,sp400,Industrials
+IBOC,sp400,Financials
+IDA,sp400,Utilities
+IDCC,sp400,Information Technology
+IESC,sp400,Industrials
+INGR,sp400,Consumer Staples
+IPGP,sp400,Information Technology
+IRT,sp400,Real Estate
+ITT,sp400,Industrials
+JAZZ,sp400,Health Care
+JEF,sp400,Financials
+JLL,sp400,Real Estate
+KBH,sp400,Consumer Discretionary
+KBR,sp400,Industrials
+KD,sp400,Information Technology
+KEX,sp400,Industrials
+KNF,sp400,Materials
+KNSL,sp400,Financials
+KNX,sp400,Industrials
+KRC,sp400,Real Estate
+KRG,sp400,Real Estate
+KRYS,sp400,Health Care
+KTOS,sp400,Industrials
+LAD,sp400,Consumer Discretionary
+LAMR,sp400,Real Estate
+LEA,sp400,Consumer Discretionary
+LECO,sp400,Industrials
+LFUS,sp400,Information Technology
+LIVN,sp400,Health Care
+LNTH,sp400,Health Care
+LOPE,sp400,Consumer Discretionary
+LPX,sp400,Industrials
+LSCC,sp400,Information Technology
+LSTR,sp400,Industrials
+M,sp400,Consumer Discretionary
+MANH,sp400,Information Technology
+MAT,sp400,Consumer Discretionary
+MEDP,sp400,Health Care
+MIDD,sp400,Industrials
+MKSI,sp400,Information Technology
+MLI,sp400,Industrials
+MMS,sp400,Industrials
+MOG-A,sp400,Industrials
+MOH,sp400,Health Care
+MORN,sp400,Financials
+MP,sp400,Materials
+MSA,sp400,Industrials
+MSM,sp400,Industrials
+MTDR,sp400,Energy
+MTG,sp400,Financials
+MTN,sp400,Consumer Discretionary
+MTSI,sp400,Information Technology
+MTZ,sp400,Industrials
+MUR,sp400,Energy
+MUSA,sp400,Consumer Discretionary
+MZTI,sp400,Consumer Staples
+NBIX,sp400,Health Care
+NEU,sp400,Materials
+NFG,sp400,Utilities
+NJR,sp400,Utilities
+NLY,sp400,Financials
+NNN,sp400,Real Estate
+NOV,sp400,Energy
+NOVT,sp400,Information Technology
+NTNX,sp400,Information Technology
+NVST,sp400,Health Care
+NVT,sp400,Industrials
+NWE,sp400,Utilities
+NXST,sp400,Communication Services
+NXT,sp400,Industrials
+NYT,sp400,Communication Services
+OC,sp400,Industrials
+OGE,sp400,Utilities
+OGS,sp400,Utilities
+OHI,sp400,Real Estate
+OKTA,sp400,Information Technology
+OLED,sp400,Information Technology
+OLLI,sp400,Consumer Discretionary
+ONB,sp400,Financials
+ONTO,sp400,Information Technology
+OPCH,sp400,Health Care
+ORA,sp400,Utilities
+ORI,sp400,Financials
+OSK,sp400,Industrials
+OVV,sp400,Energy
+OZK,sp400,Financials
+PAG,sp400,Consumer Discretionary
+PATH,sp400,Information Technology
+PB,sp400,Financials
+PBF,sp400,Energy
+PCTY,sp400,Industrials
+PEGA,sp400,Information Technology
+PEN,sp400,Health Care
+PFGC,sp400,Consumer Staples
+PII,sp400,Consumer Discretionary
+PINS,sp400,Communication Services
+PK,sp400,Real Estate
+PLNT,sp400,Consumer Discretionary
+PNFP,sp400,Financials
+POR,sp400,Utilities
+POST,sp400,Consumer Staples
+PPC,sp400,Consumer Staples
+PR,sp400,Energy
+PRI,sp400,Financials
+PSN,sp400,Industrials
+PVH,sp400,Consumer Discretionary
+QLYS,sp400,Information Technology
+R,sp400,Industrials
+RBA,sp400,Industrials
+RBC,sp400,Industrials
+REXR,sp400,Real Estate
+RGA,sp400,Financials
+RGEN,sp400,Health Care
+RGLD,sp400,Materials
+RH,sp400,Consumer Discretionary
+RLI,sp400,Financials
+RMBS,sp400,Information Technology
+RNR,sp400,Financials
+ROIV,sp400,Health Care
+ROKU,sp400,Communication Services
+RPM,sp400,Materials
+RRC,sp400,Energy
+RRX,sp400,Industrials
+RS,sp400,Materials
+RYAN,sp400,Financials
+RYN,sp400,Real Estate
+SAIA,sp400,Industrials
+SAIC,sp400,Industrials
+SANM,sp400,Information Technology
+SARO,sp400,Industrials
+SBRA,sp400,Real Estate
+SCI,sp400,Consumer Discretionary
+SEIC,sp400,Financials
+SF,sp400,Financials
+SFM,sp400,Consumer Staples
+SGI,sp400,Consumer Discretionary
+SHC,sp400,Health Care
+SIGI,sp400,Financials
+SIRI,sp400,Communication Services
+SITM,sp400,Information Technology
+SLAB,sp400,Information Technology
+SLGN,sp400,Materials
+SLM,sp400,Financials
+SMG,sp400,Materials
+SMTC,sp400,Information Technology
+SN,sp400,Consumer Discretionary
+SNX,sp400,Information Technology
+SOLS,sp400,Materials
+SON,sp400,Materials
+SPXC,sp400,Industrials
+SR,sp400,Utilities
+SSB,sp400,Financials
+SSD,sp400,Industrials
+ST,sp400,Industrials
+STAG,sp400,Real Estate
+STRL,sp400,Industrials
+STWD,sp400,Financials
+SUI,sp400,Real Estate
+SWX,sp400,Utilities
+SYNA,sp400,Information Technology
+TCBI,sp400,Financials
+TEX,sp400,Industrials
+THC,sp400,Health Care
+THG,sp400,Financials
+THO,sp400,Consumer Discretionary
+TKR,sp400,Industrials
+TLN,sp400,Utilities
+TNL,sp400,Consumer Discretionary
+TOL,sp400,Consumer Discretionary
+TOST,sp400,Financials
+TREX,sp400,Industrials
+TRU,sp400,Industrials
+TTC,sp400,Industrials
+TTEK,sp400,Industrials
+TTMI,sp400,Information Technology
+TXNM,sp400,Utilities
+TXRH,sp400,Consumer Discretionary
+UBSI,sp400,Financials
+UFPI,sp400,Industrials
+UGI,sp400,Utilities
+ULS,sp400,Industrials
+UMBF,sp400,Financials
+UNM,sp400,Financials
+USFD,sp400,Consumer Staples
+UTHR,sp400,Health Care
+VAL,sp400,Energy
+VC,sp400,Consumer Discretionary
+VFC,sp400,Consumer Discretionary
+VIAV,sp400,Information Technology
+VICR,sp400,Industrials
+VLY,sp400,Financials
+VMI,sp400,Industrials
+VNO,sp400,Real Estate
+VNOM,sp400,Energy
+VNT,sp400,Information Technology
+VOYA,sp400,Financials
+VVV,sp400,Consumer Discretionary
+WAL,sp400,Financials
+WCC,sp400,Industrials
+WEX,sp400,Financials
+WFRD,sp400,Energy
+WH,sp400,Consumer Discretionary
+WHR,sp400,Consumer Discretionary
+WING,sp400,Consumer Discretionary
+WLK,sp400,Materials
+WMG,sp400,Communication Services
+WMS,sp400,Industrials
+WPC,sp400,Real Estate
+WSO,sp400,Industrials
+WTFC,sp400,Financials
+WTRG,sp400,Utilities
+WTS,sp400,Industrials
+WWD,sp400,Industrials
+XPO,sp400,Industrials
+XRAY,sp400,Health Care
+YETI,sp400,Consumer Discretionary
+ZION,sp400,Financials
+AAMI,sp600,Financials
+AAP,sp600,Consumer Discretionary
+AAT,sp600,Real Estate
+ABCB,sp600,Financials
+ABG,sp600,Consumer Discretionary
+ABM,sp600,Industrials
+ABR,sp600,Financials
+ACA,sp600,Industrials
+ACAD,sp600,Health Care
+ACHC,sp600,Health Care
+ACIW,sp600,Information Technology
+ACLS,sp600,Information Technology
+ACMR,sp600,Information Technology
+ACT,sp600,Financials
+ADAM,sp600,Real Estate
+ADEA,sp600,Information Technology
+ADIG,sp600,Information Technology
+ADMA,sp600,Health Care
+ADNT,sp600,Consumer Discretionary
+ADT,sp600,Consumer Discretionary
+ADUS,sp600,Health Care
+AEO,sp600,Consumer Discretionary
+AESI,sp600,Energy
+AGNT,sp600,Real Estate
+AGO,sp600,Financials
+AGX,sp600,Industrials
+AGYS,sp600,Information Technology
+AHCO,sp600,Health Care
+AIN,sp600,Industrials
+AIR,sp600,Industrials
+AKR,sp600,Real Estate
+ALG,sp600,Industrials
+ALGT,sp600,Industrials
+ALHC,sp600,Health Care
+ALKS,sp600,Health Care
+ALRM,sp600,Financials
+AMN,sp600,Health Care
+AMPH,sp600,Health Care
+AMR,sp600,Materials
+AMRX,sp600,Health Care
+AMSF,sp600,Financials
+AMTM,sp600,Industrials
+ANDE,sp600,Consumer Staples
+ANIP,sp600,Health Care
+AORT,sp600,Health Care
+AOSL,sp600,Information Technology
+APAM,sp600,Financials
+APLE,sp600,Real Estate
+APOG,sp600,Industrials
+ARCB,sp600,Industrials
+ARLO,sp600,Information Technology
+AROC,sp600,Energy
+ARR,sp600,Real Estate
+ASO,sp600,Consumer Discretionary
+ASTE,sp600,Industrials
+ASTH,sp600,Health Care
+ATEN,sp600,Information Technology
+ATMU,sp600,Industrials
+AUB,sp600,Financials
+AVA,sp600,Utilities
+AWI,sp600,Industrials
+AWR,sp600,Utilities
+AX,sp600,Financials
+AZTA,sp600,Health Care
+AZZ,sp600,Industrials
+BANC,sp600,Financials
+BANF,sp600,Financials
+BANR,sp600,Financials
+BBT,sp600,Financials
+BCC,sp600,Industrials
+BCPC,sp600,Materials
+BFAM,sp600,Consumer Discretionary
+BFH,sp600,Financials
+BFS,sp600,Real Estate
+BGC,sp600,Financials
+BHE,sp600,Information Technology
+BJRI,sp600,Consumer Discretionary
+BKE,sp600,Consumer Discretionary
+BKU,sp600,Financials
+BL,sp600,Information Technology
+BLFS,sp600,Health Care
+BLKB,sp600,Information Technology
+BMI,sp600,Information Technology
+BNL,sp600,Real Estate
+BOH,sp600,Financials
+BOOT,sp600,Consumer Discretionary
+BOX,sp600,Information Technology
+BRC,sp600,Industrials
+BTU,sp600,Energy
+BXMT,sp600,Financials
+CACC,sp600,Financials
+CAG,sp600,Consumer Staples
+CAKE,sp600,Consumer Discretionary
+CALM,sp600,Consumer Staples
+CALX,sp600,Information Technology
+CALY,sp600,Consumer Discretionary
+CARG,sp600,Communication Services
+CASH,sp600,Financials
+CATY,sp600,Financials
+CBRL,sp600,Consumer Discretionary
+CBU,sp600,Financials
+CC,sp600,Materials
+CCOI,sp600,Communication Services
+CCS,sp600,Consumer Discretionary
+CE,sp600,Materials
+CENT,sp600,Consumer Staples
+CENTA,sp600,Consumer Staples
+CENX,sp600,Materials
+CERT,sp600,Health Care
+CFFN,sp600,Financials
+CHCO,sp600,Financials
+CHEF,sp600,Consumer Staples
+CLSK,sp600,Information Technology
+CNK,sp600,Communication Services
+CNMD,sp600,Health Care
+CNR,sp600,Energy
+CNS,sp600,Financials
+CNXC,sp600,Industrials
+CNXN,sp600,Information Technology
+COCO,sp600,Consumer Staples
+COHU,sp600,Information Technology
+COLL,sp600,Health Care
+CON,sp600,Health Care
+COTY,sp600,Consumer Staples
+CPB,sp600,Consumer Staples
+CPF,sp600,Financials
+CPK,sp600,Utilities
+CRC,sp600,Energy
+CRGY,sp600,Energy
+CRI,sp600,Consumer Discretionary
+CRK,sp600,Energy
+CRSR,sp600,Information Technology
+CRVL,sp600,Health Care
+CSR,sp600,Real Estate
+CSW,sp600,Industrials
+CTS,sp600,Information Technology
+CUBI,sp600,Financials
+CURB,sp600,Real Estate
+CVBF,sp600,Financials
+CVCO,sp600,Consumer Discretionary
+CVI,sp600,Energy
+CVSA,sp600,Consumer Discretionary
+CWEN,sp600,Utilities
+CWEN-A,sp600,Utilities
+CWK,sp600,Real Estate
+CWST,sp600,Industrials
+CWT,sp600,Utilities
+CXM,sp600,Information Technology
+CXW,sp600,Industrials
+CZR,sp600,Consumer Discretionary
+DAN,sp600,Consumer Discretionary
+DAVE,sp600,Financials
+DBD,sp600,Information Technology
+DCH,sp600,Consumer Discretionary
+DCOM,sp600,Financials
+DEA,sp600,Real Estate
+DEI,sp600,Real Estate
+DFH,sp600,Consumer Discretionary
+DFIN,sp600,Financials
+DGII,sp600,Information Technology
+DIOD,sp600,Information Technology
+DLX,sp600,Industrials
+DMC,sp600,Consumer Staples
+DNOW,sp600,Industrials
+DORM,sp600,Consumer Discretionary
+DRH,sp600,Real Estate
+DV,sp600,Communication Services
+DXC,sp600,Information Technology
+DXPE,sp600,Industrials
+EBC,sp600,Financials
+ECG,sp600,Industrials
+ECPG,sp600,Financials
+EFC,sp600,Financials
+EFOR,sp600,Information Technology
+EGBN,sp600,Financials
+EIG,sp600,Financials
+EMN,sp600,Materials
+ENOV,sp600,Health Care
+ENPH,sp600,Information Technology
+ENR,sp600,Consumer Staples
+ENVA,sp600,Financials
+EPAC,sp600,Industrials
+EPAM,sp600,Information Technology
+EPC,sp600,Consumer Staples
+EPRT,sp600,Real Estate
+ESE,sp600,Industrials
+ESI,sp600,Materials
+ETSY,sp600,Consumer Discretionary
+EVTC,sp600,Financials
+EXTR,sp600,Information Technology
+EYE,sp600,Consumer Discretionary
+EZPW,sp600,Financials
+FA,sp600,Industrials
+FBK,sp600,Financials
+FBNC,sp600,Financials
+FBP,sp600,Financials
+FBRT,sp600,Real Estate
+FCF,sp600,Financials
+FCPT,sp600,Real Estate
+FELE,sp600,Industrials
+FFBC,sp600,Financials
+FG,sp600,Financials
+FHB,sp600,Financials
+FIBK,sp600,Financials
+FIVN,sp600,Information Technology
+FIZZ,sp600,Consumer Staples
+FLO,sp600,Consumer Staples
+FMC,sp600,Materials
+FOXF,sp600,Consumer Discretionary
+FRPT,sp600,Consumer Staples
+FSS,sp600,Industrials
+FTDR,sp600,Consumer Discretionary
+FTRE,sp600,Health Care
+FUL,sp600,Materials
+FULT,sp600,Financials
+FUN,sp600,Consumer Discretionary
+GBX,sp600,Industrials
+GEO,sp600,Industrials
+GFF,sp600,Industrials
+GIII,sp600,Consumer Discretionary
+GKOS,sp600,Health Care
+GNL,sp600,Real Estate
+GNW,sp600,Financials
+GO,sp600,Consumer Staples
+GOLF,sp600,Consumer Discretionary
+GPI,sp600,Consumer Discretionary
+GPOR,sp600,Energy
+GRBK,sp600,Consumer Discretionary
+GSHD,sp600,Financials
+GT,sp600,Consumer Discretionary
+GTES,sp600,Industrials
+GTM,sp600,Communication Services
+GTY,sp600,Real Estate
+GVA,sp600,Industrials
+HAFC,sp600,Financials
+HASI,sp600,Financials
+HAYW,sp600,Industrials
+HCC,sp600,Materials
+HCI,sp600,Financials
+HCSG,sp600,Industrials
+HE,sp600,Utilities
+HFWA,sp600,Financials
+HIW,sp600,Real Estate
+HLIT,sp600,Information Technology
+HLX,sp600,Energy
+HMN,sp600,Financials
+HNI,sp600,Industrials
+HOPE,sp600,Financials
+HP,sp600,Energy
+HRMY,sp600,Health Care
+HSTM,sp600,Health Care
+HTH,sp600,Financials
+HTLD,sp600,Industrials
+HTO,sp600,Utilities
+HUBG,sp600,Industrials
+HWKN,sp600,Materials
+HZO,sp600,Consumer Discretionary
+IART,sp600,Health Care
+IBP,sp600,Consumer Discretionary
+ICHR,sp600,Information Technology
+ICUI,sp600,Health Care
+IIPR,sp600,Real Estate
+INDB,sp600,Financials
+INDV,sp600,Health Care
+INSP,sp600,Health Care
+INSW,sp600,Energy
+INVA,sp600,Health Care
+INVX,sp600,Energy
+IOSP,sp600,Materials
+IPAR,sp600,Consumer Staples
+IRDM,sp600,Communication Services
+ITGR,sp600,Health Care
+ITRI,sp600,Information Technology
+IVT,sp600,Real Estate
+JBGS,sp600,Real Estate
+JBLU,sp600,Industrials
+JBSS,sp600,Consumer Staples
+JBTM,sp600,Industrials
+JJSF,sp600,Consumer Staples
+JOE,sp600,Real Estate
+JXN,sp600,Financials
+KAI,sp600,Industrials
+KALU,sp600,Materials
+KFY,sp600,Industrials
+KGS,sp600,Energy
+KLIC,sp600,Information Technology
+KMPR,sp600,Financials
+KMT,sp600,Industrials
+KMX,sp600,Consumer Discretionary
+KN,sp600,Information Technology
+KNTK,sp600,Energy
+KOP,sp600,Materials
+KRMN,sp600,Industrials
+KSS,sp600,Consumer Discretionary
+KTB,sp600,Consumer Discretionary
+KWR,sp600,Materials
+LAUR,sp600,Consumer Discretionary
+LAZ,sp600,Financials
+LBRT,sp600,Energy
+LCII,sp600,Consumer Discretionary
+LEG,sp600,Consumer Discretionary
+LEU,sp600,Energy
+LFST,sp600,Health Care
+LGIH,sp600,Consumer Discretionary
+LIF,sp600,Information Technology
+LGND,sp600,Health Care
+LKFN,sp600,Financials
+LKQ,sp600,Consumer Discretionary
+LMAT,sp600,Health Care
+LNC,sp600,Financials
+LNN,sp600,Materials
+LPG,sp600,Energy
+LQDA,sp600,Health Care
+LQDT,sp600,Industrials
+LRN,sp600,Consumer Discretionary
+LTC,sp600,Real Estate
+LTH,sp600,Consumer Discretionary
+LUMN,sp600,Communication Services
+LW,sp600,Consumer Staples
+LXP,sp600,Real Estate
+LYFT,sp600,Industrials
+LZ,sp600,Industrials
+LZB,sp600,Consumer Discretionary
+MAC,sp600,Real Estate
+MAN,sp600,Industrials
+MARA,sp600,Information Technology
+MATW,sp600,Consumer Discretionary
+MATX,sp600,Industrials
+MBC,sp600,Industrials
+MBGL,sp600,Industrials
+MBIN,sp600,Financials
+MC,sp600,Financials
+MCRI,sp600,Consumer Discretionary
+MCY,sp600,Financials
+MD,sp600,Health Care
+MDU,sp600,Utilities
+MFP,sp600,Industrials
+MGEE,sp600,Utilities
+MGY,sp600,Energy
+MHK,sp600,Consumer Discretionary
+MHO,sp600,Consumer Discretionary
+MIR,sp600,Information Technology
+MKTX,sp600,Financials
+MLKN,sp600,Industrials
+MMI,sp600,Real Estate
+MMSI,sp600,Health Care
+MPT,sp600,Real Estate
+MRCY,sp600,Industrials
+MRP,sp600,Real Estate
+MRTN,sp600,Industrials
+MSEX,sp600,Utilities
+MSGS,sp600,Communication Services
+MTCH,sp600,Communication Services
+MTH,sp600,Consumer Discretionary
+MTRN,sp600,Materials
+MTUS,sp600,Materials
+MTX,sp600,Materials
+MWA,sp600,Industrials
+MXL,sp600,Information Technology
+MYRG,sp600,Industrials
+NABL,sp600,Information Technology
+NATL,sp600,Financials
+NAVI,sp600,Financials
+NBHC,sp600,Financials
+NBTB,sp600,Financials
+NE,sp600,Energy
+NEO,sp600,Health Care
+NEOG,sp600,Health Care
+NGVT,sp600,Materials
+NHC,sp600,Health Care
+NHI,sp600,Real Estate
+NIC,sp600,Financials
+NMIH,sp600,Financials
+NOG,sp600,Energy
+NPK,sp600,Industrials
+NPO,sp600,Industrials
+NSIT,sp600,Industrials
+NSP,sp600,Industrials
+NSSC,sp600,Information Technology
+NTCT,sp600,Information Technology
+NTST,sp600,Real Estate
+NWBI,sp600,Financials
+NWL,sp600,Consumer Discretionary
+NWN,sp600,Utilities
+NX,sp600,Industrials
+NXRT,sp600,Real Estate
+OFG,sp600,Financials
+OGN,sp600,Health Care
+OI,sp600,Materials
+OII,sp600,Energy
+OMCL,sp600,Health Care
+OPLN,sp600,Industrials
+OSIS,sp600,Information Technology
+OSW,sp600,Consumer Discretionary
+OTTR,sp600,Utilities
+OUT,sp600,Real Estate
+PAHC,sp600,Health Care
+PARR,sp600,Energy
+PAYC,sp600,Industrials
+PAYO,sp600,Financials
+PATK,sp600,Consumer Discretionary
+PBH,sp600,Health Care
+PBI,sp600,Industrials
+PCRX,sp600,Health Care
+PDFS,sp600,Information Technology
+PEB,sp600,Real Estate
+PECO,sp600,Real Estate
+PENG,sp600,Information Technology
+PENN,sp600,Consumer Discretionary
+PFBC,sp600,Financials
+PFS,sp600,Financials
+PGNY,sp600,Health Care
+PHIN,sp600,Consumer Discretionary
+PI,sp600,Information Technology
+PIPR,sp600,Financials
+PJT,sp600,Financials
+PLAB,sp600,Information Technology
+PLMR,sp600,Financials
+PLUS,sp600,Information Technology
+PLXS,sp600,Information Technology
+PMT,sp600,Real Estate
+POOL,sp600,Consumer Discretionary
+POWI,sp600,Information Technology
+POWL,sp600,Industrials
+PPLI,sp600,Communication Services
+PRDO,sp600,Consumer Discretionary
+PRG,sp600,Financials
+PRGO,sp600,Health Care
+PRGS,sp600,Information Technology
+PRIM,sp600,Industrials
+PRK,sp600,Financials
+PRKS,sp600,Consumer Discretionary
+PRLB,sp600,Industrials
+PRSU,sp600,Consumer Discretionary
+PRVA,sp600,Health Care
+PSMT,sp600,Consumer Staples
+PTCT,sp600,Health Care
+PTEN,sp600,Energy
+PTGX,sp600,Health Care
+PTON,sp600,Consumer Discretionary
+PZZA,sp600,Consumer Discretionary
+QDEL,sp600,Health Care
+QNST,sp600,Communication Services
+QRVO,sp600,Information Technology
+QTWO,sp600,Information Technology
+RAMP,sp600,Information Technology
+RAL,sp600,Information Technology
+RCUS,sp600,Health Care
+RDN,sp600,Financials
+RDNT,sp600,Health Care
+RELY,sp600,Financials
+RES,sp600,Energy
+REYN,sp600,Consumer Staples
+REX,sp600,Energy
+REZI,sp600,Industrials
+RHI,sp600,Industrials
+RHP,sp600,Real Estate
+RITM,sp600,Financials
+RNG,sp600,Information Technology
+RNST,sp600,Financials
+ROAD,sp600,Industrials
+ROCK,sp600,Industrials
+ROG,sp600,Information Technology
+RRR,sp600,Consumer Discretionary
+RSI,sp600,Consumer Discretionary
+RUN,sp600,Industrials
+RUSHA,sp600,Industrials
+RXO,sp600,Industrials
+SAFE,sp600,Real Estate
+SABR,sp600,Consumer Discretionary
+SAFT,sp600,Financials
+SAH,sp600,Consumer Discretionary
+SBCF,sp600,Financials
+SBH,sp600,Consumer Discretionary
+SBSI,sp600,Financials
+SCHL,sp600,Consumer Discretionary
+SCL,sp600,Materials
+SCSC,sp600,Information Technology
+SDGR,sp600,Health Care
+SEDG,sp600,Information Technology
+SEI,sp600,Energy
+SEZL,sp600,Financials
+SFBS,sp600,Financials
+SFNC,sp600,Financials
+SHAK,sp600,Consumer Discretionary
+SHEN,sp600,Communication Services
+SHO,sp600,Real Estate
+SHOO,sp600,Consumer Discretionary
+SIG,sp600,Consumer Discretionary
+SKT,sp600,Real Estate
+SKY,sp600,Consumer Discretionary
+SKYW,sp600,Industrials
+SLG,sp600,Real Estate
+SLVM,sp600,Materials
+SM,sp600,Energy
+SMP,sp600,Consumer Discretionary
+SMPL,sp600,Consumer Staples
+SNDR,sp600,Industrials
+SNEX,sp600,Financials
+SONO,sp600,Consumer Discretionary
+SPHR,sp600,Communication Services
+SPNT,sp600,Financials
+SPSC,sp600,Information Technology
+SRPT,sp600,Health Care
+STAA,sp600,Health Care
+STBA,sp600,Financials
+STC,sp600,Financials
+STEP,sp600,Financials
+STRA,sp600,Consumer Discretionary
+SUPN,sp600,Health Care
+SXI,sp600,Industrials
+SXT,sp600,Materials
+TALO,sp600,Energy
+TBBK,sp600,Financials
+TDC,sp600,Information Technology
+TDS,sp600,Communication Services
+TDW,sp600,Energy
+TFIN,sp600,Financials
+TFX,sp600,Health Care
+TGTX,sp600,Health Care
+THRM,sp600,Consumer Discretionary
+TILE,sp600,Industrials
+TMDX,sp600,Health Care
+TMP,sp600,Financials
+TNC,sp600,Industrials
+TNDM,sp600,Health Care
+TPC,sp600,Industrials
+TR,sp600,Consumer Staples
+TRIP,sp600,Communication Services
+TRMK,sp600,Financials
+TRN,sp600,Industrials
+TRNO,sp600,Real Estate
+TRST,sp600,Financials
+TRUP,sp600,Financials
+UA,sp600,Consumer Discretionary
+UAA,sp600,Consumer Discretionary
+UCB,sp600,Financials
+UCTT,sp600,Information Technology
+UE,sp600,Real Estate
+UFCS,sp600,Financials
+UFPT,sp600,Health Care
+UNF,sp600,Industrials
+UNFI,sp600,Consumer Staples
+UNIT,sp600,Communication Services
+UPBD,sp600,Consumer Discretionary
+UPWK,sp600,Industrials
+URBN,sp600,Consumer Discretionary
+USLM,sp600,Materials
+USPH,sp600,Health Care
+UTI,sp600,Consumer Discretionary
+UTL,sp600,Utilities
+UVV,sp600,Consumer Staples
+VAC,sp600,Consumer Discretionary
+VCEL,sp600,Health Care
+VCTR,sp600,Financials
+VCYT,sp600,Health Care
+VECO,sp600,Information Technology
+VGNT,sp600,Consumer Discretionary
+VIR,sp600,Health Care
+VIRT,sp600,Financials
+VRRM,sp600,Industrials
+VRTS,sp600,Financials
+VSAT,sp600,Information Technology
+VSEC,sp600,Industrials
+VSH,sp600,Information Technology
+VSNT,sp600,Communication Services
+VSTS,sp600,Industrials
+VSXY,sp600,Consumer Discretionary
+VTOL,sp600,Energy
+VVX,sp600,Industrials
+VYX,sp600,Information Technology
+WABC,sp600,Financials
+WAFD,sp600,Financials
+WAY,sp600,Health Care
+WD,sp600,Financials
+WDFC,sp600,Consumer Staples
+WEN,sp600,Consumer Discretionary
+WERN,sp600,Industrials
+WGO,sp600,Consumer Discretionary
+WHD,sp600,Energy
+WINA,sp600,Consumer Discretionary
+WKC,sp600,Energy
+WLY,sp600,Communication Services
+WOR,sp600,Industrials
+WRBY,sp600,Consumer Discretionary
+WRLD,sp600,Financials
+WS,sp600,Materials
+WSBC,sp600,Financials
+WSC,sp600,Industrials
+WSFS,sp600,Financials
+WT,sp600,Financials
+WU,sp600,Financials
+WWW,sp600,Consumer Discretionary
+XHR,sp600,Real Estate
+XNCR,sp600,Health Care
+XPEL,sp600,Consumer Discretionary
+YELP,sp600,Communication Services
+YOU,sp600,Information Technology
+ZD,sp600,Communication Services
+ZWS,sp600,Industrials

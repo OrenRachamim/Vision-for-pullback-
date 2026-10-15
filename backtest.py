@@ -98,10 +98,10 @@ def prefetch(tickers, cache_dir="data", chunk=50):
 TOL = 0.995                     # מרווח ביטחון כך שהסינון לעולם לא יפסול איתות אמיתי
 
 
-def daily_candidates(df):
+def daily_candidates(df, vol_mult=None):
     vma = df["Volume"].rolling(20).mean()
-    return ((df["Close"] > df["Open"]) &
-            (df["Volume"] > TOL * ps.DAILY["vol_mult"] * vma)).values
+    vm = ps.DAILY["vol_mult"] if vol_mult is None else vol_mult
+    return ((df["Close"] > df["Open"]) & (df["Volume"] > TOL * vm * vma)).values
 
 
 def weekly_candidates(df):
@@ -118,27 +118,88 @@ def weekly_candidates(df):
 
 
 # ---------------------------------------------------------------- walk-forward
-def scan_history(df, start=None, end=None, prefilter=True, daily=True):
+def scan_history(df, start=None, end=None, prefilter=True, daily=True, weekly=True, params=None):
     """מריץ את detect() יום-יום. מחזיר רשימת dict - שורה לכל יום עם איתות כלשהו."""
     if hasattr(ps, "clean_event_volume"):      # הגרסה המקורית (v1) לא כוללת את התיקון
         df = ps.clean_event_volume(df)
     idx = df.index
     lo = max(DAILY_WARMUP, idx.searchsorted(pd.Timestamp(start)) if start else 0)
     hi = idx.searchsorted(pd.Timestamp(end), side="right") if end else len(df)
-    dcand = daily_candidates(df) if prefilter else np.ones(len(df), bool)
+    params = params or ps.DAILY
+    dcand = daily_candidates(df, params["vol_mult"]) if prefilter else np.ones(len(df), bool)
     if not daily:
         dcand = np.zeros(len(df), bool)
     wcand = weekly_candidates(df) if prefilter else np.ones(len(df), bool)
+    if not weekly:
+        wcand = np.zeros(len(df), bool)
     out = []
     for t in range(lo, hi):
         if not (dcand[t] or wcand[t]):
             continue
         t0 = idx.searchsorted(idx[t] - pd.Timedelta(days=LIVE_WINDOW_DAYS))
         win = df.iloc[t0:t + 1]                           # מה שהסורק היה רואה ביום t
-        rd = ps.detect(win, ps.DAILY) if dcand[t] else None
+        rd = ps.detect(win, params) if dcand[t] else None
         rw = ps.detect(ps.to_weekly(win), ps.WEEKLY) if wcand[t] else None
         if rd or rw:
             out.append(dict(t=t, t0=t0, daily=rd, weekly=rw))
+    return out
+
+
+MARKET_ETF = {"sp500": "SPY", "sp400": "MDY", "sp600": "IJR"}
+SECTOR_ETF = {"Information Technology": "XLK", "Financials": "XLF", "Health Care": "XLV",
+              "Consumer Discretionary": "XLY", "Consumer Staples": "XLP", "Energy": "XLE",
+              "Industrials": "XLI", "Materials": "XLB", "Utilities": "XLU",
+              "Real Estate": "XLRE", "Communication Services": "XLC"}
+
+
+def index_for(ticker, mode, membership="universes/membership.csv"):
+    """המדד שהמניה משתייכת אליו: market -> SPY/MDY/IJR, sector -> קרן הסקטור (XLK, XLF...)."""
+    if not hasattr(index_for, "_m"):
+        index_for._m = (pd.read_csv(membership).set_index("ticker")
+                        if os.path.exists(membership) else pd.DataFrame())
+    m = index_for._m
+    if ticker not in m.index:
+        return "SPY" if mode == "market" else None
+    row = m.loc[ticker]
+    return MARKET_ETF.get(row["index"], "SPY") if mode == "market" else SECTOR_ETF.get(row["sector"])
+
+
+_INDEX_CACHE = {}
+
+
+def index_hits(etf, args):
+    """איתותי הפולבק היומי של המדד (פרמטרים INDEX), עם מטמון לכל תהליך."""
+    if etf not in _INDEX_CACHE:
+        df = load_history(etf, args.cache_dir)
+        hits = scan_history(df, args.start, args.end, weekly=False, params=ps.INDEX)
+        _INDEX_CACHE[etf] = (df, hits)
+    return _INDEX_CACHE[etf]
+
+
+def index_combo_signals(df, hits, idf, ihits, window=5):
+    """איתות קנייה: איתות יומי במניה, וגם איתות פולבק במדד שלה באותו יום או עד window ימי מסחר
+    לפני כן - כל עוד המדד לא נסגר מתחת ל-base_lo שלו מאז. מחזיר [(stock_hit, index_hit)]."""
+    if not hits or not ihits:
+        return []
+    icl = idf["Close"]
+    idates = idf.index
+    ih = [(idates[h["t"]], h) for h in ihits]
+    out = []
+    for h in hits:
+        if not h["daily"]:
+            continue
+        day = df.index[h["t"]]
+        pos = idates.searchsorted(day, side="right") - 1            # יום המסחר של המדד <= היום
+        if pos < 0:
+            continue
+        lo_day = idates[max(0, pos - window)]
+        cands = [x for d, x in ih if lo_day <= d <= day]
+        if not cands:
+            continue
+        ix = cands[-1]
+        if icl.iloc[ix["t"]:pos + 1].min() < ix["daily"]["base_lo"]:
+            continue
+        out.append((h, ix))
     return out
 
 
@@ -263,14 +324,15 @@ def make_row(df, fwd, ticker, kind, hit, res, args, atr=None):
 
 
 def focus_kind(args):
-    return "combo" if args.combo else "weekly" if args.weekly_only else "daily"
+    return ("combo" if args.combo or args.index_combo
+            else "weekly" if args.weekly_only else "daily")
 
 
 def run_ticker(ticker, args):
     use_scanner(args.scanner)
     df = load_history(ticker, args.cache_dir, args.csv_dir, args.refresh)
     hits = scan_history(df, args.start, args.end, prefilter=not args.no_prefilter,
-                        daily=not args.weekly_only)
+                        daily=not args.weekly_only, weekly=not args.index_combo)
     fwd = forward_returns(df)
     lo = bt_lo(df, args.start)
     hi = df.index.searchsorted(pd.Timestamp(args.end), side="right") if args.end else len(df)
@@ -281,6 +343,18 @@ def run_ticker(ticker, args):
         for kind in ("daily", "weekly"):
             if hit[kind] is not None:
                 rows.append(make_row(df, fwd, ticker, kind, hit, hit[kind], args, atr))
+    if args.index_combo:
+        etf = index_for(ticker, args.index_combo)
+        if etf:
+            idf, ihits = index_hits(etf, args)
+            for h, ix in index_combo_signals(df, hits, idf, ihits, args.index_window):
+                row = make_row(df, fwd, ticker, "combo", h, h["daily"], args, atr)
+                row.update(index=etf, index_date=idf.index[ix["t"]].date(), index_tpos=ix["t"],
+                           index_score=int(ix["daily"]["score"]),
+                           index_drop=float(ix["daily"]["drop"]),
+                           days_after_index=int(idf.index.searchsorted(df.index[h["t"]], side="right")
+                                                - 1 - ix["t"]))
+                rows.append(row)
     if args.combo:
         for c in combo_signals(df, hits, args.arm_days, args.require_uptrend):
             wk = c["weekly_hit"]
@@ -407,7 +481,9 @@ def build_report(sig, base, args, out, control=None):
          + f" | max hold: {args.max_hold} days"
          f" | dedupe cooldown: {args.cooldown} bars"
          + (f" | combo: daily signal within {args.arm_days} days after a weekly signal"
-            if args.combo else ""),
+            if args.combo else "")
+         + (f" | index combo ({args.index_combo}): stock daily signal + index pullback signal "
+            f"within {args.index_window} days" if args.index_combo else ""),
          f"* baseline = every trading day of the same tickers, same period"
          f" ({len(base):,} days)",
          ""]
@@ -608,6 +684,26 @@ def trade_chart(df, t, stop, ticker, path, trail_atr=3.0, max_hold=60, before=40
     return tr
 
 
+def index_stacked_chart(df, hit, idf, ihit, ticker, etf, path, after=20):
+    """למעלה: המניה ביום הקנייה. למטה: המדד שלה ביום איתות הפולבק שלו. כל פאנל מסמן את התאריך של השני."""
+    import matplotlib.pyplot as plt
+    tmp = [path + s for s in (".s.png", ".i.png")]
+    s_day, i_day = df.index[hit["t"]], idf.index[ihit["t"]]
+    signal_chart(df, hit, "daily", ticker, tmp[0], after=after, note=" = BUY",
+                 marks=[(i_day, f"{etf} signal {i_day.date()}", "#7A4FB0")])
+    signal_chart(idf, ihit, "daily", etf, tmp[1], after=after, note=f" = index pullback ({ticker}'s index)",
+                 marks=[(s_day, f"{ticker} buy {s_day.date()}", "#185FA5")])
+    fig, axes = plt.subplots(2, 1, figsize=(12, 14))
+    for ax, p in zip(axes, tmp):
+        ax.imshow(plt.imread(p))
+        ax.axis("off")
+    fig.tight_layout()
+    fig.savefig(path, dpi=100)
+    plt.close(fig)
+    for p in tmp:
+        os.remove(p)
+
+
 # ---------------------------------------------------------------- main
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Walk-forward backtest for pullback_scanner.py")
@@ -618,6 +714,11 @@ def main(argv=None):
                     help="weekly signal arms the stock, a later daily signal triggers the buy")
     ap.add_argument("--arm-days", type=int, default=15,
                     help="combo: trading days after the weekly signal in which a daily signal counts")
+    ap.add_argument("--index-combo", choices=["market", "sector"], default=None,
+                    help="buy when the stock's daily signal coincides with a pullback signal in its index "
+                         "(market: SPY/MDY/IJR, sector: XLK/XLF/...)")
+    ap.add_argument("--index-window", type=int, default=5,
+                    help="index signal may come up to N trading days before the stock signal")
     ap.add_argument("--require-uptrend", action="store_true",
                     help="combo: the daily trigger must have price above SMA200 (control matches)")
     ap.add_argument("--weekly-only", action="store_true",
@@ -672,7 +773,7 @@ def main(argv=None):
             nw = sum(r["kind"] == "weekly" for r in rows)
             nc = sum(r["kind"] == "combo" for r in rows)
             print(f"{tk:6s} {len(df):5d} bars  daily signals={nd:3d}  weekly signals={nw:3d}"
-                  + (f"  combo={nc:3d}" if args.combo else ""))
+                  + (f"  combo={nc:3d}" if args.combo or args.index_combo else ""))
             all_rows += rows
             bases.append(base)
             hits_by[tk] = (hits, df)
@@ -695,6 +796,20 @@ def main(argv=None):
 def _draw_samples(sig, hits_by, args):
     """דוגמה אקראית (קבועה) של איתותים יומיים, כדי לבדוק בעין שהדפוס באמת נראה כמו פולבק."""
     if args.charts <= 0:
+        return
+    if args.index_combo:
+        pick = sig[sig.kind == "combo"]
+        for _, r in pick.sample(min(args.charts, len(pick)), random_state=1).iterrows():
+            hits, df = hits_by[r["ticker"]]
+            idf, ihits = index_hits(r["index"], args)
+            sh = {h["t"]: h for h in hits}[r["tpos"]]
+            ih = {h["t"]: h for h in ihits}[r["index_tpos"]]
+            name = f"{r['ticker']}_{r['date']}_{r['index']}_{r.get('exit_reason', 'na')}.png"
+            try:
+                index_stacked_chart(df, sh, idf, ih, r["ticker"], r["index"],
+                                    os.path.join(args.out, "charts", name))
+            except Exception as e:
+                print("chart error", name, e)
         return
     if args.combo:
         pick = sig[sig.kind == "combo"]
