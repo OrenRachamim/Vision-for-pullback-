@@ -33,7 +33,7 @@ def ticks(ax, idx, n, fmt):
     ax.set_xticklabels([z.strftime(fmt) for z in idx[::step]], fontsize=7)
 
 
-def chart(r, path):
+def chart(r, path, hold=1, h_spread=ms.P["H_SPREAD"]):
     d, h, m = md.load(r.ticker, "daily"), md.load(r.ticker, "1h"), md.load(r.ticker, "5m")
     t = pd.Timestamp(r.time)
     sig = pd.Timestamp(r.dsig_date)
@@ -47,10 +47,15 @@ def chart(r, path):
     for n in ms.D_MAS:
         ax.plot(np.arange(len(dd)), d["Close"].rolling(n).mean().loc[dd.index], color=COL[n], lw=0.9, label=f"SMA{n}")
     ks = dd.index.get_loc(sig)
-    ax.axvspan(ks - 0.5, ks + 0.5, color="#3B6D11", alpha=0.2)
-    sp = ms.daily_signals(d)["spread"].loc[sig]
+    k0 = ks - (hold - 1)                                     # יום הפריצה (עם המתנה - hold-1 ימים לפני האיתות)
+    ax.axvspan(k0 - 0.5, k0 + 0.5, color="#3B6D11", alpha=0.2)
+    if hold > 1:
+        ax.axvspan(k0 + 0.5, ks + 0.5, color="#185FA5", alpha=0.12)
+    sp = ms.daily_signals(d)["spread"].iloc[max(0, i_sig - (hold - 1) - 9):i_sig - (hold - 1) + 1].min()
     ax.set_title(f"DAILY - {r.ticker}: MAs 10..200 converge (spread {sp:.1%}) and close above all of them "
-                 f"for the first time on {sig.date()}", fontsize=9, loc="left")
+                 f"for the first time on {dd.index[k0].date()}"
+                 + (f"; stays above for {hold} days -> signal {sig.date()} (blue)" if hold > 1 else ""),
+                 fontsize=9, loc="left")
     ax.legend(fontsize=6, ncol=6, loc="upper left")
     ticks(ax, dd.index, 10, "%Y-%m-%d")
     # שעתי
@@ -62,7 +67,7 @@ def chart(r, path):
         ax.plot(np.arange(len(hh)), h["Close"].rolling(n).mean().loc[hh.index], color=COL[n], lw=0.9, label=f"SMA{n} (1h)")
     ax.axvline(hh.index.searchsorted(t) - 0.5, color="#185FA5", ls="--", lw=1)
     ax.set_title(f"HOURLY: SMA 10/20/50/100 spread {r.h_spread:.1%} at the last closed hour before entry "
-                 f"(filter <= {ms.P['H_SPREAD']:.0%})", fontsize=9, loc="left")
+                 f"(filter <= {h_spread:.0%})", fontsize=9, loc="left")
     ax.legend(fontsize=6, ncol=4, loc="upper left")
     ticks(ax, hh.index, 10, "%m-%d %H:%M")
     # 5 דקות
@@ -108,6 +113,8 @@ def main(argv=None):
     ap.add_argument("--n", type=int, default=8)
     ap.add_argument("--out", default="mtf_charts")
     ap.add_argument("--seed", type=int, default=2)
+    ap.add_argument("--d_hold", type=int, default=1, help="the D_HOLD the results were run with")
+    ap.add_argument("--h_spread", type=float, default=ms.P["H_SPREAD"], help="the H_SPREAD the results were run with")
     ap.add_argument("--skip", nargs="*", default=[], help="folders of charts already drawn - pick other trades")
     args = ap.parse_args(argv)
     T = pd.read_csv(os.path.join(args.res, "trigger_trades.csv"))
@@ -118,7 +125,7 @@ def main(argv=None):
     os.makedirs(args.out, exist_ok=True)
     for i, (_, r) in enumerate(pick.iterrows(), 1):
         p = os.path.join(args.out, f"{i:02d}_{r.ticker}_{str(r.time)[:10]}.png")
-        chart(r, p)
+        chart(r, p, args.d_hold, args.h_spread)
         print(p, f"{r.eod_ret:+.2%}")
 
 
