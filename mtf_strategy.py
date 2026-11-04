@@ -105,6 +105,43 @@ def simulate(o, hi, lo, c, day_id, e, stop, target, exit_day_id):
     return entry, c[n - 1], "open"
 
 
+# יציאה לפי "עלייה מספקת ביחס לזמן": בסגירת כל נר 5 דקות בודקים אם הרווח >= הסף, שעולה עם זמן המסחר
+# שעבר מהכניסה (שעות מסחר בלבד). sqrt: c*sqrt(hours) (תנועת מחיר טיפוסית גדלה כשורש הזמן);
+# lin: floor + per_day*days. יציאה בפתיחת הנר הבא. בנוסף: סטופ (שפל הירידה, אם stop=True) ומקסימום max_days ימים.
+TT = {
+    "tt_sqrt0.5": dict(form="sqrt", c=0.005, floor=0.002, max_days=5, stop=True),
+    "tt_sqrt0.3": dict(form="sqrt", c=0.003, floor=0.002, max_days=5, stop=True),
+    "tt_sqrt1.0": dict(form="sqrt", c=0.010, floor=0.002, max_days=5, stop=True),
+    "tt_lin0.5+1": dict(form="lin", floor=0.005, per_day=0.01, max_days=5, stop=True),
+    "tt_lin0.3+0.5": dict(form="lin", floor=0.003, per_day=0.005, max_days=5, stop=True),
+    "tt_sqrt0.5_nostop": dict(form="sqrt", c=0.005, floor=0.002, max_days=5, stop=False),
+}
+
+
+def required_gain(cfg, hours):
+    if cfg["form"] == "sqrt":
+        return max(cfg["floor"], cfg["c"] * np.sqrt(hours))
+    return cfg["floor"] + cfg["per_day"] * hours / 6.5
+
+
+def simulate_tt(o, hi, lo, c, day_id, e, stop, cfg):
+    entry = o[e]
+    last_day = day_id[e] + cfg["max_days"] - 1
+    n = len(c)
+    for j in range(e, n):
+        if day_id[j] > last_day:
+            return entry, c[j - 1], "time", j - 1
+        if cfg["stop"]:
+            if j > e and day_id[j] != day_id[j - 1] and o[j] <= stop:
+                return entry, o[j], "stop", j
+            if lo[j] <= stop:
+                return entry, stop, "stop", j
+        hours = (j - e + 1) * 5 / 60
+        if c[j] / entry - 1 >= required_gain(cfg, hours) and j + 1 < n:
+            return entry, o[j + 1], "gain/time", j + 1
+    return entry, c[n - 1], "open", n - 1
+
+
 def run_ticker(args):
     tk, p, seed = args
     try:
@@ -163,6 +200,15 @@ def run_ticker(args):
             out[f"{name}_ret"] = ex * (1 - p["COST"]) / (en * (1 + p["COST"])) - 1
             out[f"{name}_R"] = (ex - en) / risk
             out[f"{name}_why"] = why
+        for name, cfg in TT.items():
+            en, ex, why, xi = simulate_tt(o, hi, lo, c, day_id, e, stop, cfg)
+            if why == "open":
+                out[f"{name}_ret"] = np.nan
+                continue
+            out[f"{name}_ret"] = ex * (1 - p["COST"]) / (en * (1 + p["COST"])) - 1
+            out[f"{name}_R"] = (ex - en) / risk
+            out[f"{name}_why"] = why
+            out[f"{name}_hours"] = (xi - e + 1) * 5 / 60
         return out
 
     trades, rand = [], []
@@ -233,7 +279,7 @@ def main(argv=None):
          "params: " + ", ".join(f"{k}={v}" for k, v in p.items()), "",
          "| group | exit | trades | days | win | avg/trade | 95% CI (date-clustered) | avg R |", "|---|---|---|---|---|---|---|---|"]
     for name, g in groups:
-        for ex_ in ("eod", "2R", "next"):
+        for ex_ in ("eod", "2R", "next") + tuple(TT):
             s = stats(g, ex_)
             if s.get("n", 0) < 5:
                 L.append(f"| {name} | {ex_} | {s.get('n', 0)} | | | | | |")
