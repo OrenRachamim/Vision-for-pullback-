@@ -9,3 +9,5 @@ results*/run_log.txt
 *.log
 time*.log
 feat_cache/
+data_1h/
+data_5m/
