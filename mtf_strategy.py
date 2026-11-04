@@ -3,6 +3,7 @@ mtf_strategy.py - אסטרטגיה רב-שכבתית: יומי -> שעתי -> 5 
 
   1. יומי  : התכנסות ממוצעים נעים (SMA 10/20/50/100/150/200 בטווח של D_SPREAD מהמחיר, באחד מ-D_CONV_DAYS
               הימים האחרונים), והמחיר נסגר מעל כולם לראשונה (לא היה מעל כולם ב-D_FIRST הימים הקודמים).
+              D_HOLD>1: ממתינים שהמחיר יישאר מעל כולם D_HOLD ימים ברצף ויעלה מאז הפריצה - האיתות ביום ה-D_HOLD.
               האיתות "חמוש" ל-ARM_DAYS ימי המסחר הבאים.
   2. שעתי  : התכנסות ממוצעים שעתיים (SMA 10/20/50/100 בטווח של H_SPREAD) בנר השעתי האחרון שנסגר.
   3. 5 דקות: RSI(14) מתחת ל-RSI_OS ב-RSI_LOOK הנרות האחרונים, ואז חיתוך MACD(12,26,9) כלפי מעלה
@@ -28,7 +29,7 @@ import mtf_data as md
 
 D_MAS = (10, 20, 50, 100, 150, 200)
 H_MAS = (10, 20, 50, 100)
-P = dict(D_SPREAD=0.05, D_CONV_DAYS=10, D_FIRST=20, ARM_DAYS=5, H_SPREAD=0.02, RSI_OS=30, RSI_LOOK=6,
+P = dict(D_SPREAD=0.05, D_CONV_DAYS=10, D_FIRST=20, D_HOLD=1, ARM_DAYS=5, H_SPREAD=0.02, RSI_OS=30, RSI_LOOK=6,
          STOP_BARS=12, COST=0.0005)
 
 
@@ -54,7 +55,14 @@ def daily_signals(df, p=P):
     above = (c > mas.max(axis=1)) & mas.notna().all(axis=1)
     conv = (spread <= p["D_SPREAD"]).rolling(p["D_CONV_DAYS"], min_periods=1).max().astype(bool)
     prev_above = above.shift(1).rolling(p["D_FIRST"], min_periods=1).max().fillna(1).astype(bool)
-    sig = above & conv & ~prev_above
+    start = above & conv & ~prev_above                     # היום הראשון מעל כל הממוצעים
+    n = p.get("D_HOLD", 1)
+    if n <= 1:
+        sig = start
+    else:
+        # המתנה: המחיר נשאר מעל כל הממוצעים n ימים ברצף מאז הפריצה, והסגירה ביום ה-n גבוהה מסגירת יום הפריצה
+        run = above.groupby((~above).cumsum()).cumsum()
+        sig = (run == n) & start.shift(n - 1, fill_value=False) & (c > c.shift(n - 1))
     return pd.DataFrame(dict(spread=spread, above=above, signal=sig), index=df.index)
 
 
