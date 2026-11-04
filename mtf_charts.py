@@ -107,10 +107,15 @@ def main(argv=None):
     ap.add_argument("res")
     ap.add_argument("--n", type=int, default=8)
     ap.add_argument("--out", default="mtf_charts")
+    ap.add_argument("--seed", type=int, default=2)
+    ap.add_argument("--skip", default=None, help="folder of charts already drawn - pick other trades")
     args = ap.parse_args(argv)
     T = pd.read_csv(os.path.join(args.res, "trigger_trades.csv"))
     full = T[T.armed & T.h_conv & T.eod_ret.notna()]
-    pick = full.sample(min(args.n, len(full)), random_state=2).sort_values("time")
+    if args.skip and os.path.isdir(args.skip):
+        done = {f.split("_", 1)[1][:-4] for f in os.listdir(args.skip) if f.endswith(".png")}
+        full = full[~(full.ticker + "_" + full.time.astype(str).str[:10]).isin(done)]
+    pick = full.sample(min(args.n, len(full)), random_state=args.seed).sort_values("time")
     os.makedirs(args.out, exist_ok=True)
     for i, (_, r) in enumerate(pick.iterrows(), 1):
         p = os.path.join(args.out, f"{i:02d}_{r.ticker}_{str(r.time)[:10]}.png")
