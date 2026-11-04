@@ -11,3 +11,4 @@ time*.log
 feat_cache/
 data_1h/
 data_5m/
+results_mtf_search*/trades.pkl
